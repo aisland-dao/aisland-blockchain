@@ -1,6 +1,6 @@
 # Aisland Node
 
-Aisland is a super-charged blockchain that facilitates multiple decentralized web application with minium integration effort for the developers.  
+Aisland is a super-charged blockchain that facilitates multiple decentralized web application with minimum integration effort for the developers.  
 The main projet based on this blockchain is a decentralised market place.
 
 Aisland Node is based on [Substrate Framework 3.0](https://www.substrate.dev), the same used from [Polkadot](https://polkadot.network). 

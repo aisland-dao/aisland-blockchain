@@ -32,6 +32,8 @@ decl_storage! {
 		ProductDepartments get(fn get_products_department): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Product Categories
 		ProductCategories get(fn get_products_category): double_map hasher(blake2_128_concat) u32,hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Standard Iso country code and official name
+        IsoCountries get(fn get_iso_country): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
 	}
 }
 
@@ -39,10 +41,12 @@ decl_storage! {
 decl_event!(
 	pub enum Event<T> where AccountId = <T as frame_system::Config>::AccountId {
         MarketPlaceDepartmentCreated(u32,Vec<u8>),          // New department created
-        MarketPlaceDepartmentDestroyed(u32),                // A department has been destroyed/removed
+        MarketPlaceDepartmentDestroyed(u32),                // Department has been destroyed/removed
 	    MarketPlaceSellerCreated(AccountId,Vec<u8>),        // New seller has been created
-        MarketPlaceCategoryCreated(u32,u32,Vec<u8>),        // new producct category has been created
-        MarketPlaceCategoryDestroyed(u32,u32),              // product category has been destroyed
+        MarketPlaceCategoryCreated(u32,u32,Vec<u8>),        // New producct category has been created
+        MarketPlaceCategoryDestroyed(u32,u32),              // Product category has been destroyed
+        MarketPlaceIsoCountryCreated(Vec<u8>,Vec<u8>),      // New Iso contry code has been created
+        MarketPlaceIsoCountryDestroyed(Vec<u8>),            // Iso contry code has been destroyed
 	}
 );
 
@@ -57,30 +61,38 @@ decl_error! {
         ConfigurationTooLong,
         /// Seller is already present
         SellerAlreadyPresent,
-        // Invalid json sintax
+        /// Invalid json sintax
         InvalidJson,
-        // Department Description is too short, it should be > 3 bytes
+        /// Department Description is too short, it should be > 3 bytes
         DepartmentDescriptionTooShort,
         // Department Description is too long, it should be < 128 bytes
         DepartmentDescriptionTooLong,
-        // Department Id cannot be equale to zero
+        /// Department Id cannot be equale to zero
         DepartmentUidCannotBeZero,
-        // Department is already present on chain
+        /// Department is already present on chain
         DepartmentAlreadyPresent,
-        // Department not found on chain
+        /// Department not found on chain
         DepartmentNotFound,
-        // Category ID cannot be equal to zero
+        /// Category ID cannot be equal to zero
         CategoryUidCannotBeZero,
-        // Category Description is too short
+        /// Category Description is too short
         CategoryDescriptionTooShort,
-        // Category Description is too long
+        /// Category Description is too long
         CategoryDescriptionTooLong,
-        // Category has not been found
+        /// Category has not been found
         CategoryNotFound,
-        // Product category is already present on chain
+        /// Product category is already present on chain
         ProductCategoryAlreadyPresent,
-        // Product category not found on chain
+        /// Product category not found on chain
         ProductCategoryNotFound,
+        /// The country code is wrong, it must be long 2 bytes
+        WrongLengthCountryCode,
+        /// The country name is too short, it must be >=3
+        CountryNameTooShort,
+        /// Country code already present on chain
+        CountryCodeAlreadyPresent,
+        /// Country code not found on chain
+        CountryCodeNotFound,
 	}
 }
 
@@ -180,6 +192,39 @@ decl_module! {
 			//ImpactActions::insert(uid,configuration.clone());
             // Generate event
 			Self::deposit_event(RawEvent::MarketPlaceSellerCreated(sender,configuration));
+			// Return a successful DispatchResult
+			Ok(())
+		}
+        /// Create a new Iso country
+        #[weight = 1000]
+		pub fn create_iso_country(origin, countrycode: Vec<u8>, countryname: Vec<u8>) -> dispatch::DispatchResult {
+			// check the request is signed from the Super User
+			let _sender = ensure_root(origin)?;
+            // check country code length == 2
+            ensure!(countrycode.len()==2, Error::<T>::WrongLengthCountryCode); 
+            // check country name length  >= 3
+            ensure!(countryname.len()>=3, Error::<T>::CountryNameTooShort);  
+            // check the country is not alreay present on chain
+			ensure!(IsoCountries::contains_key(&countrycode)==false, Error::<T>::CountryCodeAlreadyPresent);
+			// store the Iso Country Code and Name
+			IsoCountries::insert(countrycode.clone(),countryname.clone());
+            // Generate event
+			Self::deposit_event(RawEvent::MarketPlaceIsoCountryCreated(countrycode,countryname));
+			// Return a successful DispatchResult
+			Ok(())
+		}
+        /// Destroy an Iso country code and name
+        #[weight = 1000]
+		pub fn destroy_iso_country(origin, countrycode: Vec<u8>,) -> dispatch::DispatchResult {
+			// check the request is signed from the Super User
+			let _sender = ensure_root(origin)?;
+            // verify the country code exists
+			ensure!(IsoCountries::contains_key(&countrycode)==true, Error::<T>::CountryCodeNotFound);
+			// Remove country code
+			IsoCountries::take(countrycode.clone());
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+			Self::deposit_event(RawEvent::MarketPlaceIsoCountryDestroyed(countrycode));
 			// Return a successful DispatchResult
 			Ok(())
 		}
