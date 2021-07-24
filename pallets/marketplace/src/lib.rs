@@ -35,6 +35,8 @@ decl_storage! {
         ProductCategories get(fn get_products_category): double_map hasher(blake2_128_concat) u32,hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Standard Iso country code and official name
         IsoCountries get(fn get_iso_country): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
+        // Standard Iso dial code for country code
+        IsoDialcode get(fn get_iso_dialcode): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
     }
 }
 
@@ -44,13 +46,15 @@ decl_event!(
     where
         AccountId = <T as frame_system::Config>::AccountId,
     {
-        MarketPlaceDepartmentCreated(u32, Vec<u8>), // New department created
-        MarketPlaceDepartmentDestroyed(u32),        // Department has been destroyed/removed
-        MarketPlaceSellerCreated(AccountId, Vec<u8>), // New seller has been created
-        MarketPlaceCategoryCreated(u32, u32, Vec<u8>), // New producct category has been created
-        MarketPlaceCategoryDestroyed(u32, u32),     // Product category has been destroyed
-        MarketPlaceIsoCountryCreated(Vec<u8>, Vec<u8>), // New Iso contry code has been created
-        MarketPlaceIsoCountryDestroyed(Vec<u8>),    // Iso contry code has been destroyed
+        MarketPlaceDepartmentCreated(u32, Vec<u8>),         // New department created
+        MarketPlaceDepartmentDestroyed(u32),                // Department has been destroyed/removed
+        MarketPlaceSellerCreated(AccountId, Vec<u8>),       // New seller has been created
+        MarketPlaceCategoryCreated(u32, u32, Vec<u8>),      // New producct category has been created
+        MarketPlaceCategoryDestroyed(u32, u32),             // Product category has been destroyed
+        MarketPlaceIsoCountryCreated(Vec<u8>, Vec<u8>),     // New Iso contry code has been created
+        MarketPlaceIsoCountryDestroyed(Vec<u8>),            // Iso contry code has been destroyed
+        MarketPlaceIsoDialCodeCreated(Vec<u8>, Vec<u8>),    // New country dial code has been created
+        MarketPlaceIsoDialCodeDestroyed(Vec<u8>),           // A country dial code has been destroyed
     }
 );
 
@@ -97,6 +101,8 @@ decl_error! {
         CountryCodeAlreadyPresent,
         /// Country code not found on chain
         CountryCodeNotFound,
+        /// International Dial code is too short it must be at the least 2 bytes
+        DialcodeTooShort,
     }
 }
 
@@ -199,7 +205,7 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
-        /// Create a new Iso country
+        /// Create a new Iso country code and name
         #[weight = 1000]
         pub fn create_iso_country(origin, countrycode: Vec<u8>, countryname: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed from the Super User
@@ -232,6 +238,39 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
+         /// Create a new Iso country code and name
+         #[weight = 1000]
+         pub fn create_dialcode_country(origin, countrycode: Vec<u8>, dialcode: Vec<u8>) -> dispatch::DispatchResult {
+             // check the request is signed from the Super User
+             let _sender = ensure_root(origin)?;
+             // check country code length == 2
+             ensure!(countrycode.len()==2, Error::<T>::WrongLengthCountryCode);
+             // check country name length  >= 3
+             ensure!(dialcode.len()>=2, Error::<T>::DialcodeTooShort);
+             // check the dialcode is not alreay present on chain
+             ensure!(IsoDialcode::contains_key(&countrycode)==false, Error::<T>::CountryCodeAlreadyPresent);
+             // store the Iso Dial Code
+             IsoDialcode::insert(countrycode.clone(),dialcode.clone());
+             // Generate event
+             Self::deposit_event(RawEvent::MarketPlaceIsoDialCodeCreated(countrycode,dialcode));
+             // Return a successful DispatchResult
+             Ok(())
+         }
+         /// Destroy an Iso country code and name
+         #[weight = 1000]
+         pub fn destroy_dialcode_country(origin, countrycode: Vec<u8>,) -> dispatch::DispatchResult {
+             // check the request is signed from the Super User
+             let _sender = ensure_root(origin)?;
+             // verify the country code exists
+             ensure!(IsoDialcode::contains_key(&countrycode)==true, Error::<T>::CountryCodeNotFound);
+             // Remove country code
+             IsoDialcode::take(countrycode.clone());
+             // Generate event
+             //it can leave orphans, anyway it's a decision of the super user
+             Self::deposit_event(RawEvent::MarketPlaceIsoDialCodeDestroyed(countrycode));
+             // Return a successful DispatchResult
+             Ok(())
+         }
     }
 }
 // function to validate a json string for no/std. It does not allocate of memory
