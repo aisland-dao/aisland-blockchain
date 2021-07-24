@@ -28,10 +28,10 @@ decl_storage! {
 		// we use a safe crypto hashing by blake2_128
 		// Seller data storage
 		Sellers get(fn get_seller): map hasher(blake2_128_concat) T::AccountId => Option<Vec<u8>>;
-        // Departments
+        // Product Departments
 		ProductDepartments get(fn get_products_department): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
-        // Categories
-		ProductCategories get(fn get_products_category): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Product Categories
+		ProductCategories get(fn get_products_category): double_map hasher(blake2_128_concat) u32,hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
 	}
 }
 
@@ -41,6 +41,8 @@ decl_event!(
         MarketPlaceDepartmentCreated(u32,Vec<u8>),          // New department created
         MarketPlaceDepartmentDestroyed(u32),                // A department has been destroyed/removed
 	    MarketPlaceSellerCreated(AccountId,Vec<u8>),        // New seller has been created
+        MarketPlaceCategoryCreated(u32,u32,Vec<u8>),        // new producct category has been created
+        MarketPlaceCategoryDestroyed(u32,u32),              // product category has been destroyed
 	}
 );
 
@@ -67,6 +69,18 @@ decl_error! {
         DepartmentAlreadyPresent,
         // Department not found on chain
         DepartmentNotFound,
+        // Category ID cannot be equal to zero
+        CategoryUidCannotBeZero,
+        // Category Description is too short
+        CategoryDescriptionTooShort,
+        // Category Description is too long
+        CategoryDescriptionTooLong,
+        // Category has not been found
+        CategoryNotFound,
+        // Product category is already present on chain
+        ProductCategoryAlreadyPresent,
+        // Product category not found on chain
+        ProductCategoryNotFound,
 	}
 }
 
@@ -78,9 +92,9 @@ decl_module! {
 		// Events must be initialized
 		fn deposit_event() = default;
 
-        /// Create a new department
+        /// Create a new product department
         #[weight = 1000]
-		pub fn create_department(origin, uid: u32, description: Vec<u8>) -> dispatch::DispatchResult {
+		pub fn create_product_department(origin, uid: u32, description: Vec<u8>) -> dispatch::DispatchResult {
 			// check the request is signed from root
 			let _sender = ensure_root(origin)?;
             // check uid >0
@@ -97,9 +111,9 @@ decl_module! {
 			// Return a successful DispatchResult
 			Ok(())
 		}
-        /// Destroy a department
+        /// Destroy a product department
         #[weight = 1000]
-		pub fn destroy_department(origin, uid: u32) -> dispatch::DispatchResult {
+		pub fn destroy_product_department(origin, uid: u32) -> dispatch::DispatchResult {
 			// check the request is signed from Super User
 			let _sender = ensure_root(origin)?;
             // verify the department exists
@@ -109,6 +123,44 @@ decl_module! {
             // Generate event
             //it can leave orphans, anyway it's a decision of the super user
 			Self::deposit_event(RawEvent::MarketPlaceDepartmentDestroyed(uid));
+			// Return a successful DispatchResult
+			Ok(())
+		}
+        /// Create a new product category
+        #[weight = 1000]
+		pub fn create_product_category(origin, uiddepartment: u32, uidcategory: u32, description: Vec<u8>) -> dispatch::DispatchResult {
+			// check the request is signed from the Super User
+			let _sender = ensure_root(origin)?;
+            // check uid department >0
+            ensure!(uiddepartment > 0, Error::<T>::DepartmentUidCannotBeZero); 
+            // check uid category >0
+            ensure!(uidcategory > 0, Error::<T>::CategoryUidCannotBeZero); 
+			//check description length
+			ensure!(description.len() > 3, Error::<T>::CategoryDescriptionTooShort); 
+            ensure!(description.len() < 128, Error::<T>::CategoryDescriptionTooLong); 
+            // check the department is  alreay present on chain
+			ensure!(ProductDepartments::contains_key(uiddepartment)==true, Error::<T>::DepartmentNotFound);
+            // check the department/category is not alreay present on chain
+			ensure!(ProductCategories::contains_key(uiddepartment,uidcategory)==false, Error::<T>::ProductCategoryAlreadyPresent);
+			// store the department
+			ProductCategories::insert(uiddepartment,uidcategory,description.clone());
+            // Generate event
+			Self::deposit_event(RawEvent::MarketPlaceCategoryCreated(uiddepartment,uidcategory,description));
+			// Return a successful DispatchResult
+			Ok(())
+		}
+        /// Destroy a product category
+        #[weight = 1000]
+		pub fn destroy_product_category(origin, uiddepartment: u32, uidcategory: u32) -> dispatch::DispatchResult {
+			// check the request is signed from the Super User
+			let _sender = ensure_root(origin)?;
+            // verify the department/category exists
+			ensure!(ProductCategories::contains_key(&uiddepartment,&uidcategory)==true, Error::<T>::ProductCategoryNotFound);
+			// Remove department
+			ProductCategories::take(uiddepartment,uidcategory);
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+			Self::deposit_event(RawEvent::MarketPlaceCategoryDestroyed(uiddepartment, uidcategory));
 			// Return a successful DispatchResult
 			Ok(())
 		}
