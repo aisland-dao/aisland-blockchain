@@ -865,6 +865,13 @@ impl pallet_impact_actions::Config for Runtime {
 }
 // end Impact Actions
 
+// Market Place management
+impl pallet_marketplace::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+}
+// end Market Place
+
 // pallet orml-nft
 impl orml_nft::Config for Runtime {
 	type ClassId = u32;
@@ -938,6 +945,8 @@ construct_runtime!(
 		Assets: pallet_assets::{Module, Call, Storage, Event<T>} = 71,
 		//Impact Actions
 		ImpactActions: pallet_impact_actions::{Module, Call, Storage, Event<T>} = 72,
+		//Market Place
+		MarketPlace: pallet_marketplace::{Module, Call, Storage, Event<T>} = 80,
 
 	}
 );
