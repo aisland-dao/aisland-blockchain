@@ -123,6 +123,32 @@ decl_error! {
         SellerCertificateVerificationTooShort,
         /// Seller certificate verification is too long
         SellerCertificateVerificationTooLong,
+        /// Seller info email is wrong
+        SellerInfoEmailIsWrong,
+        /// Seller support email is wrong
+        SellerSupportEmailIsWrong,
+        /// Phone description is too short, it should be at the least 4 bytes
+        SellerPhoneDescriptionTooShort,
+        /// Phone description is too long, maximum 64 bytes
+        SellerPhoneDescriptionTooLong,
+        /// Phone number is too short at the least > 3 bytes
+        SellerPhoneNumberTooShort,
+        /// Phone number is too long, maximum 21 bytes
+        SellerPhoneNumberTooLong,
+        /// Categories of product/service sold from seller is missing
+        SellerCategoriesMissing,
+        /// Included countries for shipment are missing at the least "countries":[], should be set
+        SellercountriesMissing,
+        /// the inout fiels is not set for the the country, it should be 0 for included, 1 for excluded country with default worldwide
+        IncludedExcludedCountryValueIsMissing,
+        /// The latitude of the center point for the shipment area, is missing
+        ShipmentAreaCenterLatitudeIsMissing,
+        /// The longitude of the center point for the shipment area, is missing
+        ShipmentAreaCenterLongitudeIsMissing,
+        /// The latitude of the border point for the shipment area, is missing
+        ShipmentAreaBorderLatitudeIsMissing,
+        /// The longitude of the border point for the shipment area, is missing
+        ShipmentAreaBorderLongituteIsMissing,
     }
 }
 
@@ -278,14 +304,90 @@ decl_module! {
                     ensure!(certificateverificationurl.len()>3,Error::<T>::SellerCertificateVerificationTooShort);
                     ensure!(certificateverificationurl.len()<=64,Error::<T>::SellerCertificateVerificationTooLong);
                     //TODO - CHECK ADDRESS VALIDITY for verification link
-
                     x=x+1;
                 }
             }
+            // checking emailinfo
+            let emailinfo=json_get_value(configuration.clone(),"emailinfo".as_bytes().to_vec());
+            ensure!(emailinfo.len()>5,Error::<T>::SellerInfoEmailIsWrong);
+            // TODO ADD checking on valid email
+            // checking email support
+            let emailsupport=json_get_value(configuration.clone(),"emailsupport".as_bytes().to_vec());
+            ensure!(emailsupport.len()>5,Error::<T>::SellerSupportEmailIsWrong);
+            // TODO ADD checking on valid email
 
-            //
+            // checking phone numbers
+            let phones=json_get_value(configuration.clone(),"phones".as_bytes().to_vec());
+            if phones.len()>0 {
+                let mut x=0;
+                loop {  
+                    let w=json_get_recordvalue(phones.clone(),x);
+                    if w.len()==0 {
+                        break;
+                    }
+                    let phonedescription=json_get_value(configuration.clone(),"phonedescription".as_bytes().to_vec());
+                    let phonenumber=json_get_value(configuration.clone(),"phonebumber".as_bytes().to_vec());
+                    ensure!(phonedescription.len()>3,Error::<T>::SellerPhoneDescriptionTooShort);
+                    ensure!(phonedescription.len()<=64,Error::<T>::SellerPhoneDescriptionTooLong);
+                    ensure!(phonenumber.len()>3,Error::<T>::SellerPhoneNumberTooShort);
+                    ensure!(phonenumber.len()<=21,Error::<T>::SellerPhoneNumberTooLong);
+                    //TODO - CHECK PHONE VALIDITY 
+                    x=x+1;
+                }
+            }
+            // checking categories of products/services with the department
+            let categories=json_get_value(configuration.clone(),"categories".as_bytes().to_vec());
+            ensure!(categories.len()>0,Error::<T>::SellerCategoriesMissing);
+            let mut x=0;
+            let mut nc=0;
+            loop {  
+                let c=json_get_recordvalue(categories.clone(),x);
+                if c.len()==0 {
+                    break;
+                }
+                let category=json_get_value(configuration.clone(),"category".as_bytes().to_vec());
+                let department=json_get_value(configuration.clone(),"department".as_bytes().to_vec());
+                let categoryu32=vec_to_u32(category);
+                let departmentu32=vec_to_u32(department);
+                ensure!(ProductCategories::contains_key(categoryu32,departmentu32)==true, Error::<T>::ProductCategoryNotFound);
+                x=x+1;
+                nc=nc+1;
+            }
+            // check that we have at least one valid product category
+            ensure!(nc>0,Error::<T>::SellerCategoriesMissing);
+            // checking included countries of shipment, if not set means worldwide less the excluded countries
+            let countries=json_get_value(configuration.clone(),"countries".as_bytes().to_vec());
+            ensure!(countries.len()>0,Error::<T>::SellercountriesMissing);
+            let mut x=0;
+            loop {  
+                let c=json_get_recordvalue(countries.clone(),x);
+                if c.len()==0 {
+                    break;
+                }
+                let country=json_get_value(configuration.clone(),"country".as_bytes().to_vec());
+                let inout=json_get_value(configuration.clone(),"inout".as_bytes().to_vec());
+                let inoutv=vec_to_u32(inout);
+                ensure!(IsoCountries::contains_key(country)==true, Error::<T>::CountryCodeNotFound);
+                ensure!(inoutv==0 || inoutv==1,Error::<T>::IncludedExcludedCountryValueIsMissing);
+                x=x+1;
+            }
+            // check that we have at least one valid product category
+            ensure!(nc>0,Error::<T>::SellerCategoriesMissing);
+            // delivery area can be delimited by GPS coordinates where a first point is the center of a circle and second point is the border of the same circle
+            // this is useful if a service/product can be delivered only around a certain place
+            let shipmentarea=json_get_value(configuration.clone(),"shipmentarea".as_bytes().to_vec());
+            if shipmentarea.len()>0{
+                let centerlatitude=json_get_value(shipmentarea.clone(),"centerlatitude".as_bytes().to_vec());
+                let centerlongitude=json_get_value(shipmentarea.clone(),"centerlongitude".as_bytes().to_vec());
+                let borderlatitude=json_get_value(shipmentarea.clone(),"borderlatitude".as_bytes().to_vec());
+                let borderlongitude=json_get_value(shipmentarea.clone(),"borderlongitude".as_bytes().to_vec());
+                ensure!(centerlatitude.len()>0,Error::<T>::ShipmentAreaCenterLatitudeIsMissing);
+                ensure!(centerlongitude.len()>0,Error::<T>::ShipmentAreaCenterLongitudeIsMissing);
+                ensure!(borderlatitude.len()>0,Error::<T>::ShipmentAreaBorderLatitudeIsMissing);
+                ensure!(borderlongitude.len()>0,Error::<T>::ShipmentAreaBorderLongituteIsMissing);
+            }
             // Insert new seller
-            //ImpactActions::insert(uid,configuration.clone());
+            Sellers::<T>::insert(sender.clone(),configuration.clone());
             // Generate event
             Self::deposit_event(RawEvent::MarketPlaceSellerCreated(sender,configuration));
             // Return a successful DispatchResult
