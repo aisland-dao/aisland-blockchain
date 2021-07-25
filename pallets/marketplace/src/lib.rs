@@ -103,6 +103,26 @@ decl_error! {
         CountryCodeNotFound,
         /// International Dial code is too short it must be at the least 2 bytes
         DialcodeTooShort,
+        /// Seller type can be 1 for Company, 2 for Professional, 3 for Private
+        SellerTypeInvalid,
+        /// Seller name is too short, it must be at least 5 bytes
+        SellerNameTooShort,
+        /// The Sellet city is too short, it mut be at the least 5 bytes
+        SellerCityTooShort,
+        /// The seller address is too long, maximum 128 bytes
+        SellerAddressTooLong,
+        /// The seller zip code is too long, maximum 12 bytes
+        SellerZipCodeTooLong,
+        /// Po Box is too long, maximum 64 bytes
+        SellerPoBoxTooLong,
+        /// Seller certification description is too short, must be > 3 bytes
+        SellerCertificationDescriptionTooShort,
+        /// Seller certification description is too long, must be <= 64 bytes
+        SellerCertificationDescriptionTooLong,
+        /// Seller certificate verification is too short
+        SellerCertificateVerificationTooShort,
+        /// Seller certificate verification is too long
+        SellerCertificateVerificationTooLong,
     }
 }
 
@@ -196,9 +216,75 @@ decl_module! {
             ensure!(configuration.len() < 8192, Error::<T>::ConfigurationTooLong);
             ensure!(Sellers::<T>::contains_key(&sender)==false, Error::<T>::SellerAlreadyPresent);
             // check json validity
-            let js=configuration.clone();
-            ensure!(json_check_validity(js),Error::<T>::InvalidJson);
-            // Insert configuration of the impact action
+            ensure!(json_check_validity(configuration.clone()),Error::<T>::InvalidJson);
+            // checking seller type
+            let sellertype=json_get_value(configuration.clone(),"sellertype".as_bytes().to_vec());
+            let sellertypeu32=vec_to_u32(sellertype);
+            ensure!(sellertypeu32==1 || sellertypeu32==2 || sellertypeu32==3 ,Error::<T>::SellerTypeInvalid);
+            // checking company name or name/surname
+            let sellername=json_get_value(configuration.clone(),"name".as_bytes().to_vec());
+            ensure!(sellername.len()>5,Error::<T>::SellerNameTooShort);
+            // address we check for maximum lenght of 128 bytes
+            let selleraddress=json_get_value(configuration.clone(),"address".as_bytes().to_vec());
+            ensure!(selleraddress.len()<128,Error::<T>::SellerAddressTooLong);
+            // zip code we check for maximum lenght of 12 bytes
+            let sellerzip=json_get_value(configuration.clone(),"zip".as_bytes().to_vec());
+            ensure!(sellerzip.len()<13,Error::<T>::SellerZipCodeTooLong);
+            // checking the city minimum 3 bytes
+            let sellerpobox=json_get_value(configuration.clone(),"pobox".as_bytes().to_vec());
+            ensure!(sellerpobox.len()<64,Error::<T>::SellerPoBoxTooLong);
+            // checking the city minimum 3 bytes
+            let sellercity=json_get_value(configuration.clone(),"city".as_bytes().to_vec());
+            ensure!(sellercity.len()>5,Error::<T>::SellerCityTooShort);
+            // checking websites
+            let websites=json_get_value(configuration.clone(),"websites".as_bytes().to_vec());
+            if websites.len()>0 {
+                let mut x=0;
+                loop {  
+                    let w=json_get_recordvalue(websites.clone(),x);
+                    if w.len()==0 {
+                        break;
+                    }
+                    //TODO - CHECK ADDRESS VALIDITY
+                    x=x+1;
+                }
+            }
+            // checking social url
+            let socialurls=json_get_value(configuration.clone(),"socialurls".as_bytes().to_vec());
+            if socialurls.len()>0 {
+                let mut x=0;
+                loop {  
+                    let w=json_get_recordvalue(socialurls.clone(),x);
+                    if w.len()==0 {
+                        break;
+                    }
+                    //TODO - CHECK ADDRESS VALIDITY for social link
+                    x=x+1;
+                }
+            }
+            // checking certifications
+            let certifications=json_get_value(configuration.clone(),"certifications".as_bytes().to_vec());
+            if certifications.len()>0 {
+                let mut x=0;
+                loop {  
+                    let w=json_get_recordvalue(certifications.clone(),x);
+                    if w.len()==0 {
+                        break;
+                    }
+                    let certificationdescription=json_get_value(configuration.clone(),"description".as_bytes().to_vec());
+                    let certificateverificationurl=json_get_value(configuration.clone(),"verificationurl".as_bytes().to_vec());
+                    ensure!(certificationdescription.len()>3,Error::<T>::SellerCertificationDescriptionTooShort);
+                    ensure!(certificationdescription.len()<=64,Error::<T>::SellerCertificationDescriptionTooLong);
+                    ensure!(certificateverificationurl.len()>3,Error::<T>::SellerCertificateVerificationTooShort);
+                    ensure!(certificateverificationurl.len()<=64,Error::<T>::SellerCertificateVerificationTooLong);
+                    //TODO - CHECK ADDRESS VALIDITY for verification link
+
+                    x=x+1;
+                }
+            }
+
+            //
+            // Insert new seller
             //ImpactActions::insert(uid,configuration.clone());
             // Generate event
             Self::deposit_event(RawEvent::MarketPlaceSellerCreated(sender,configuration));
@@ -443,4 +529,17 @@ fn json_get_value(j: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
         }
     }
     return result;
+}
+//function to convert a vector to u32 with a default value of 0
+fn vec_to_u32(v:Vec<u8>) -> u32{
+    let v_slice=v.as_slice();
+    let v_str=match str::from_utf8(&v_slice){
+        Ok(f) => f,
+        Err(_) => "0"
+    };
+    let v_value:u32 = match u32::from_str(v_str){
+        Ok(f) => f,
+        Err(_) => 0,
+    };
+    v_value
 }
