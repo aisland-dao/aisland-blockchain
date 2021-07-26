@@ -156,6 +156,8 @@ decl_error! {
         SellerWebsiteUrlIsWrong,
         /// Seller the url for certificate verification is wrong
         SellerCertificationUrlIsWrong,
+        /// Seller phone number is wrong
+        SellerPhoneNumberIsWrong,
     }
 }
 
@@ -339,8 +341,8 @@ decl_module! {
                     ensure!(phonedescription.len()>3,Error::<T>::SellerPhoneDescriptionTooShort);
                     ensure!(phonedescription.len()<=64,Error::<T>::SellerPhoneDescriptionTooLong);
                     ensure!(phonenumber.len()>3,Error::<T>::SellerPhoneNumberTooShort);
-                    ensure!(phonenumber.len()<=21,Error::<T>::SellerPhoneNumberTooLong);
-                    //TODO - CHECK PHONE VALIDITY 
+                    ensure!(phonenumber.len()<=23,Error::<T>::SellerPhoneNumberTooLong);
+                    ensure!(aisland_validate_phonenumber(phonenumber)==true,Error::<T>::SellerPhoneNumberIsWrong);
                     x=x+1;
                 }
             }
@@ -773,4 +775,266 @@ fn aisland_validate_weburl(weburl:Vec<u8>) -> bool {
         }
     }
     return valid;
+}
+// function to validate a phone number
+fn aisland_validate_phonenumber(phonenumber:Vec<u8>) -> bool {
+    // check maximum lenght
+    if phonenumber.len()>23{
+        return false;
+    }
+    // check admitted bytes
+    let mut x=0;
+    for v in phonenumber.clone() {
+        if (v>=48 && v<=57) || (v==43 && x==0){
+            x=x+1;
+        }else {
+            return false;
+        }
+    }
+    // load international prefixes table
+    let mut p: Vec<Vec<u8>> = Vec::new();
+    p.push("972".into());
+    p.push("93".into());
+    p.push("355".into());
+    p.push("213".into());
+    p.push("376".into());
+    p.push("244".into());
+    p.push("54".into());
+    p.push("374".into());
+    p.push("297".into());
+    p.push("61".into());
+    p.push("43".into());
+    p.push("994".into());
+    p.push("973".into());
+    p.push("880".into());
+    p.push("375".into());
+    p.push("32".into());
+    p.push("501".into());
+    p.push("229".into());
+    p.push("975".into());
+    p.push("387".into());
+    p.push("267".into());
+    p.push("55".into());
+    p.push("246".into());
+    p.push("359".into());
+    p.push("226".into());
+    p.push("257".into());
+    p.push("855".into());
+    p.push("237".into());
+    p.push("1".into());
+    p.push("238".into());
+    p.push("345".into());
+    p.push("236".into());
+    p.push("235".into());
+    p.push("56".into());
+    p.push("86".into());
+    p.push("61".into());
+    p.push("57".into());
+    p.push("269".into());
+    p.push("242".into());
+    p.push("682".into());
+    p.push("506".into());
+    p.push("385".into());
+    p.push("53".into());
+    p.push("537".into());
+    p.push("420".into());
+    p.push("45".into());
+    p.push("253".into());
+    p.push("593".into());
+    p.push("20".into());
+    p.push("503".into());
+    p.push("240".into());
+    p.push("291".into());
+    p.push("372".into());
+    p.push("251".into());
+    p.push("298".into());
+    p.push("679".into());
+    p.push("358".into());
+    p.push("33".into());
+    p.push("594".into());
+    p.push("689".into());
+    p.push("241".into());
+    p.push("220".into());
+    p.push("995".into());
+    p.push("49".into());
+    p.push("233".into());
+    p.push("350".into());
+    p.push("30".into());
+    p.push("299".into());
+    p.push("590".into());
+    p.push("502".into());
+    p.push("224".into());
+    p.push("245".into());
+    p.push("595".into());
+    p.push("509".into());
+    p.push("504".into());
+    p.push("36".into());
+    p.push("354".into());
+    p.push("91".into());
+    p.push("62".into());
+    p.push("964".into());
+    p.push("353".into());
+    p.push("972".into());
+    p.push("39".into());
+    p.push("81".into());
+    p.push("962".into());
+    p.push("254".into());
+    p.push("686".into());
+    p.push("965".into());
+    p.push("996".into());
+    p.push("371".into());
+    p.push("961".into());
+    p.push("266".into());
+    p.push("231".into());
+    p.push("423".into());
+    p.push("370".into());
+    p.push("352".into());
+    p.push("261".into());
+    p.push("265".into());
+    p.push("60".into());
+    p.push("960".into());
+    p.push("223".into());
+    p.push("356".into());
+    p.push("692".into());
+    p.push("596".into());
+    p.push("222".into());
+    p.push("230".into());
+    p.push("262".into());
+    p.push("52".into());
+    p.push("377".into());
+    p.push("976".into());
+    p.push("382".into());
+    p.push("1664".into());
+    p.push("212".into());
+    p.push("95".into());
+    p.push("264".into());
+    p.push("674".into());
+    p.push("977".into());
+    p.push("31".into());
+    p.push("599".into());
+    p.push("687".into());
+    p.push("64".into());
+    p.push("505".into());
+    p.push("227".into());
+    p.push("234".into());
+    p.push("683".into());
+    p.push("672".into());
+    p.push("47".into());
+    p.push("968".into());
+    p.push("92".into());
+    p.push("680".into());
+    p.push("507".into());
+    p.push("675".into());
+    p.push("595".into());
+    p.push("51".into());
+    p.push("63".into());
+    p.push("48".into());
+    p.push("351".into());
+    p.push("974".into());
+    p.push("40".into());
+    p.push("250".into());
+    p.push("685".into());
+    p.push("378".into());
+    p.push("966".into());
+    p.push("221".into());
+    p.push("381".into());
+    p.push("248".into());
+    p.push("232".into());
+    p.push("65".into());
+    p.push("421".into());
+    p.push("386".into());
+    p.push("677".into());
+    p.push("27".into());
+    p.push("500".into());
+    p.push("34".into());
+    p.push("94".into());
+    p.push("249".into());
+    p.push("597".into());
+    p.push("268".into());
+    p.push("46".into());
+    p.push("41".into());
+    p.push("992".into());
+    p.push("66".into());
+    p.push("228".into());
+    p.push("690".into());
+    p.push("676".into());
+    p.push("216".into());
+    p.push("90".into());
+    p.push("993".into());
+    p.push("688".into());
+    p.push("256".into());
+    p.push("380".into());
+    p.push("971".into());
+    p.push("44".into());
+    p.push("1".into());
+    p.push("598".into());
+    p.push("998".into());
+    p.push("678".into());
+    p.push("681".into());
+    p.push("967".into());
+    p.push("260".into());
+    p.push("263".into());
+    p.push("591".into());
+    p.push("673".into());
+    p.push("61".into());
+    p.push("243".into());
+    p.push("225".into());
+    p.push("500".into());
+    p.push("44".into());
+    p.push("379".into());
+    p.push("852".into());
+    p.push("98".into());
+    p.push("44".into());
+    p.push("44".into());
+    p.push("850".into());
+    p.push("82".into());
+    p.push("856".into());
+    p.push("218".into());
+    p.push("853".into());
+    p.push("389".into());
+    p.push("691".into());
+    p.push("373".into());
+    p.push("258".into());
+    p.push("970".into());
+    p.push("872".into());
+    p.push("262".into());
+    p.push("7".into());
+    p.push("590".into());
+    p.push("290".into());
+    p.push("590".into());
+    p.push("508".into());
+    p.push("239".into());
+    p.push("252".into());
+    p.push("47".into());
+    p.push("963".into());
+    p.push("886".into());
+    p.push("255".into());
+    p.push("670".into());
+    p.push("58".into());
+    p.push("84".into());
+    // normalis number
+    let mut startpoint=0;
+    if phonenumber[0]==b'0' && phonenumber[1]==b'0' {
+        startpoint=2;
+    }
+    if phonenumber[0]==b'+' {
+        startpoint=1;
+    }
+    // create vec for comparison
+    let mut pc3:Vec<u8>= Vec::new();
+    pc3.push(phonenumber[startpoint]);
+    pc3.push(phonenumber[startpoint+1]);
+    pc3.push(phonenumber[startpoint+2]);
+    let mut pc2:Vec<u8>= Vec::new();
+    pc2.push(phonenumber[startpoint]);
+    pc2.push(phonenumber[startpoint+1]);
+    let mut pc1:Vec<u8>= Vec::new();
+    pc1.push(phonenumber[startpoint]);
+    let mut valid=false;
+    for xp in p {
+        if xp==pc3 || xp==pc2 || xp==pc1 {
+            valid =true;
+        }
+    }
+    valid
 }
