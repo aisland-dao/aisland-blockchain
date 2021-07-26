@@ -9,6 +9,7 @@ use frame_support::{
 use frame_system::{ensure_root, ensure_signed};
 use sp_std::prelude::*;
 
+
 #[cfg(test)]
 mod mock;
 
@@ -310,11 +311,11 @@ decl_module! {
             // checking emailinfo
             let emailinfo=json_get_value(configuration.clone(),"emailinfo".as_bytes().to_vec());
             ensure!(emailinfo.len()>5,Error::<T>::SellerInfoEmailIsWrong);
-            // TODO ADD checking on valid email
+            ensure!(aisland_validate_email(emailinfo.clone()),Error::<T>::SellerInfoEmailIsWrong);
             // checking email support
             let emailsupport=json_get_value(configuration.clone(),"emailsupport".as_bytes().to_vec());
             ensure!(emailsupport.len()>5,Error::<T>::SellerSupportEmailIsWrong);
-            // TODO ADD checking on valid email
+            ensure!(aisland_validate_email(emailsupport.clone()),Error::<T>::SellerSupportEmailIsWrong);
 
             // checking phone numbers
             let phones=json_get_value(configuration.clone(),"phones".as_bytes().to_vec());
@@ -644,4 +645,52 @@ fn vec_to_u32(v:Vec<u8>) -> u32{
         Err(_) => 0,
     };
     v_value
+}
+// function to validate and email address, return true/false
+fn aisland_validate_email(email:Vec<u8>) -> bool {
+    let mut flagat=false;
+    let mut valid=false;
+    let mut phase=1;
+    let mut dotphase2=false;
+    for c in email {
+        if c==64 {
+            flagat=true;
+            phase=2;
+            continue;
+        }
+        // check for allowed char in the first part of the email address before @
+        if phase==1 {
+            if  (c>=65 && c<=90) ||
+                (c>=97 && c<=122) ||
+                c==45 || c==46 || c==95 {
+                    valid=true;
+                }else
+                {
+                    valid=false;
+                    break;
+                }
+        }   
+        // check for allowed char in the second part of the email address before @
+        if phase==2 {
+            if  (c>=65 && c<=90) ||
+                (c>=97 && c<=122) ||
+                c==45 || c==46 {
+                    valid=true;
+                }else
+                {
+                    valid=false;
+                    break;
+                }
+                if c==46 {
+                    dotphase2=true;
+                }
+        }
+
+    }
+    // return validity true/false
+    if flagat==true && dotphase2==true{
+        return valid;
+    }else {
+        return flagat;
+    }   
 }
