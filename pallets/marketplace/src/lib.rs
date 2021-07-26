@@ -150,6 +150,12 @@ decl_error! {
         ShipmentAreaBorderLatitudeIsMissing,
         /// The longitude of the border point for the shipment area, is missing
         ShipmentAreaBorderLongituteIsMissing,
+        /// Seller Social Url is wrong
+        SellerSocialUrlIsWrong,
+        /// Seller web site is wrong
+        SellerWebsiteUrlIsWrong,
+        /// Seller the url for certificate verification is wrong
+        SellerCertificationUrlIsWrong,
     }
 }
 
@@ -272,7 +278,8 @@ decl_module! {
                     if w.len()==0 {
                         break;
                     }
-                    //TODO - CHECK ADDRESS VALIDITY
+                    let weburl=json_get_value(w.clone(),"weburl".as_bytes().to_vec());
+                    ensure!(aisland_validate_weburl(weburl)==true,Error::<T>::SellerWebsiteUrlIsWrong);
                     x=x+1;
                 }
             }
@@ -285,7 +292,8 @@ decl_module! {
                     if w.len()==0 {
                         break;
                     }
-                    //TODO - CHECK ADDRESS VALIDITY for social link
+                    let socialurl=json_get_value(w.clone(),"socialurl".as_bytes().to_vec());
+                    ensure!(aisland_validate_weburl(socialurl)==true,Error::<T>::SellerSocialUrlIsWrong);
                     x=x+1;
                 }
             }
@@ -304,7 +312,7 @@ decl_module! {
                     ensure!(certificationdescription.len()<=64,Error::<T>::SellerCertificationDescriptionTooLong);
                     ensure!(certificateverificationurl.len()>3,Error::<T>::SellerCertificateVerificationTooShort);
                     ensure!(certificateverificationurl.len()<=64,Error::<T>::SellerCertificateVerificationTooLong);
-                    //TODO - CHECK ADDRESS VALIDITY for verification link
+                    ensure!(aisland_validate_weburl(certificateverificationurl.clone())==true,Error::<T>::SellerCertificationUrlIsWrong);
                     x=x+1;
                 }
             }
@@ -693,4 +701,76 @@ fn aisland_validate_email(email:Vec<u8>) -> bool {
     }else {
         return flagat;
     }   
+}
+// function to validate an web url return true/false
+fn aisland_validate_weburl(weburl:Vec<u8>) -> bool {
+    let mut valid=false;
+    let mut x=0;
+    let mut httpsflag=false;
+    let mut httpflag=false;
+    let mut startpoint=0;
+    let mut https: Vec<u8>= Vec::new();
+    https.push(b'h');
+    https.push(b't');
+    https.push(b't');
+    https.push(b'p');
+    https.push(b's');
+    https.push(b':');
+    https.push(b'/');
+    https.push(b'/');
+    let mut http: Vec<u8>= Vec::new();
+    http.push(b'h');
+    http.push(b't');
+    http.push(b't');
+    http.push(b'p');
+    http.push(b':');
+    http.push(b'/');
+    http.push(b'/');
+    let mut httpscomp: Vec<u8> =Vec::new();
+    httpscomp.push(weburl[0]);
+    httpscomp.push(weburl[1]);
+    httpscomp.push(weburl[2]);
+    httpscomp.push(weburl[3]);
+    httpscomp.push(weburl[4]);
+    httpscomp.push(weburl[5]);
+    httpscomp.push(weburl[6]);
+    httpscomp.push(weburl[7]);
+    let mut httpcomp: Vec<u8> =Vec::new();
+    httpcomp.push(weburl[0]);
+    httpcomp.push(weburl[1]);
+    httpcomp.push(weburl[2]);
+    httpcomp.push(weburl[3]);
+    httpcomp.push(weburl[4]);
+    httpcomp.push(weburl[5]);
+    httpcomp.push(weburl[6]);
+    if https==httpscomp {
+        httpsflag=true;
+    }
+    if http==httpcomp {
+        httpflag=true;
+    }
+    if httpflag==false && httpsflag==false {
+        return false;
+    }
+    if httpsflag==true{
+        startpoint=8;
+    }
+    if httpflag==true{
+        startpoint=7;
+    }
+    for c in weburl {    
+        if x<startpoint {
+            x=x+1;
+            continue;
+        }
+        // check for allowed chars    
+        if  (c>=32 && c<=95) ||
+            (c>=97 && c<=126) {
+            valid=true;
+        }else{
+            valid=false;
+            break;
+        }
+    }
+    return valid;
 }
