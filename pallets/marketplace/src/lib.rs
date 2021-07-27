@@ -50,6 +50,7 @@ decl_event!(
         MarketPlaceDepartmentCreated(u32, Vec<u8>),         // New department created
         MarketPlaceDepartmentDestroyed(u32),                // Department has been destroyed/removed
         MarketPlaceSellerCreated(AccountId, Vec<u8>),       // New seller has been created
+        MarketPlaceSellerDestroyed(AccountId),              // Seller destroyed
         MarketPlaceCategoryCreated(u32, u32, Vec<u8>),      // New producct category has been created
         MarketPlaceCategoryDestroyed(u32, u32),             // Product category has been destroyed
         MarketPlaceIsoCountryCreated(Vec<u8>, Vec<u8>),     // New Iso contry code has been created
@@ -158,6 +159,8 @@ decl_error! {
         SellerCertificationUrlIsWrong,
         /// Seller phone number is wrong
         SellerPhoneNumberIsWrong,
+        /// Seller data has not been found on chain
+        SellerDataNotFound,
     }
 }
 
@@ -406,6 +409,21 @@ decl_module! {
             }
             // Generate event
             Self::deposit_event(RawEvent::MarketPlaceSellerCreated(sender,configuration));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy a Seller
+        #[weight = 1000]
+        pub fn destroy_seller(origin) -> dispatch::DispatchResult {
+            // check the request is signed
+            let sender = ensure_signed(origin)?;
+            // verify the seller exists
+            ensure!(Sellers::<T>::contains_key(&sender)==true, Error::<T>::SellerDataNotFound);
+            // Remove Seller
+            Sellers::<T>::take(sender.clone());
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceSellerDestroyed(sender));
             // Return a successful DispatchResult
             Ok(())
         }
