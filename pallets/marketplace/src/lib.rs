@@ -243,13 +243,12 @@ decl_module! {
         }
         /// Create a new seller
         #[weight = 10000]
-        pub fn create_seller(origin, configuration: Vec<u8>) -> dispatch::DispatchResult {
+        pub fn create_update_seller(origin, configuration: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed
             let sender = ensure_signed(origin)?;
             //check configuration length
             ensure!(configuration.len() > 12, Error::<T>::ConfigurationTooShort);
             ensure!(configuration.len() < 8192, Error::<T>::ConfigurationTooLong);
-            ensure!(Sellers::<T>::contains_key(&sender)==false, Error::<T>::SellerAlreadyPresent);
             // check json validity
             ensure!(json_check_validity(configuration.clone()),Error::<T>::InvalidJson);
             // checking seller type
@@ -397,8 +396,14 @@ decl_module! {
                 ensure!(borderlatitude.len()>0,Error::<T>::ShipmentAreaBorderLatitudeIsMissing);
                 ensure!(borderlongitude.len()>0,Error::<T>::ShipmentAreaBorderLongituteIsMissing);
             }
-            // Insert new seller
-            Sellers::<T>::insert(sender.clone(),configuration.clone());
+            if Sellers::<T>::contains_key(&sender)==false {
+                // Insert new seller
+                Sellers::<T>::insert(sender.clone(),configuration.clone());
+            } else {
+                // Replace Seller Data 
+                Sellers::<T>::take(sender.clone());
+                Sellers::<T>::insert(sender.clone(),configuration.clone());
+            }
             // Generate event
             Self::deposit_event(RawEvent::MarketPlaceSellerCreated(sender,configuration));
             // Return a successful DispatchResult
