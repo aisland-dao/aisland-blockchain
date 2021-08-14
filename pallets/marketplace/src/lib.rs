@@ -274,7 +274,7 @@ decl_module! {
             let sellercity=json_get_value(configuration.clone(),"city".as_bytes().to_vec());
             ensure!(sellercity.len()>5,Error::<T>::SellerCityTooShort);
             // checking websites
-            let websites=json_get_value(configuration.clone(),"websites".as_bytes().to_vec());
+            let websites=json_get_complexarray(configuration.clone(),"websites".as_bytes().to_vec());
             if websites.len()>0 {
                 let mut x=0;
                 loop {  
@@ -288,7 +288,7 @@ decl_module! {
                 }
             }
             // checking social url
-            let socialurls=json_get_value(configuration.clone(),"socialurls".as_bytes().to_vec());
+            let socialurls=json_get_complexarray(configuration.clone(),"socialurls".as_bytes().to_vec());
             if socialurls.len()>0 {
                 let mut x=0;
                 loop {  
@@ -302,7 +302,7 @@ decl_module! {
                 }
             }
             // checking certifications
-            let certifications=json_get_value(configuration.clone(),"certifications".as_bytes().to_vec());
+            let certifications=json_get_complexarray(configuration.clone(),"certifications".as_bytes().to_vec());
             if certifications.len()>0 {
                 let mut x=0;
                 loop {  
@@ -330,7 +330,7 @@ decl_module! {
             ensure!(aisland_validate_email(emailsupport.clone()),Error::<T>::SellerSupportEmailIsWrong);
 
             // checking phone numbers
-            let phones=json_get_value(configuration.clone(),"phones".as_bytes().to_vec());
+            let phones=json_get_complexarray(configuration.clone(),"phones".as_bytes().to_vec());
             if phones.len()>0 {
                 let mut x=0;
                 loop {  
@@ -349,7 +349,7 @@ decl_module! {
                 }
             }
             // checking categories of products/services with the department
-            let categories=json_get_value(configuration.clone(),"categories".as_bytes().to_vec());
+            let categories=json_get_complexarray(configuration.clone(),"categories".as_bytes().to_vec());
             ensure!(categories.len()>0,Error::<T>::SellerCategoriesMissing);
             let mut x=0;
             let mut nc=0;
@@ -369,7 +369,7 @@ decl_module! {
             // check that we have at least one valid product category
             ensure!(nc>0,Error::<T>::SellerCategoriesMissing);
             // checking included countries of shipment, if not set means worldwide less the excluded countries
-            let countries=json_get_value(configuration.clone(),"countries".as_bytes().to_vec());
+            let countries=json_get_complexarray(configuration.clone(),"countries".as_bytes().to_vec());
             ensure!(countries.len()>0,Error::<T>::SellercountriesMissing);
             let mut x=0;
             loop {  
@@ -388,7 +388,7 @@ decl_module! {
             ensure!(nc>0,Error::<T>::SellerCategoriesMissing);
             // delivery area can be delimited by GPS coordinates where a first point is the center of a circle and second point is the border of the same circle
             // this is useful if a service/product can be delivered only around a certain place
-            let shipmentarea=json_get_value(configuration.clone(),"shipmentarea".as_bytes().to_vec());
+            let shipmentarea=json_get_complexarray(configuration.clone(),"shipmentarea".as_bytes().to_vec());
             if shipmentarea.len()>0{
                 let centerlatitude=json_get_value(shipmentarea.clone(),"centerlatitude".as_bytes().to_vec());
                 let centerlongitude=json_get_value(shipmentarea.clone(),"centerlongitude".as_bytes().to_vec());
@@ -1060,4 +1060,45 @@ fn aisland_validate_phonenumber(phonenumber:Vec<u8>) -> bool {
         }
     }
     valid
+}
+// function to get value of a field with a complex array like [{....},{.....}] for Substrate runtime (no std library and no variable allocation)
+fn json_get_complexarray(j:Vec<u8>,key:Vec<u8>) -> Vec<u8> {
+    let mut result=Vec::new();
+    let mut k=Vec::new();
+    let keyl = key.len();
+    let jl = j.len();
+    k.push(b'"');
+    for xk in 0..keyl{
+        k.push(*key.get(xk).unwrap());
+    }
+    k.push(b'"');
+    k.push(b':');
+    let kl = k.len();
+    for x in  0..jl {
+        let mut m=0;
+        let mut xx=0;
+        if x+kl>jl {
+            break;
+        }
+        for i in x..x+kl {
+            if *j.get(i).unwrap()== *k.get(xx).unwrap() {
+                m=m+1;
+            }
+            xx=xx+1;
+        }
+        if m==kl{
+            let mut os=true;
+            for i in x+kl..jl-1 {
+                if *j.get(i).unwrap()==b'[' && os==true{
+                    os=false;
+                }
+                result.push(j.get(i).unwrap().clone());
+                if *j.get(i).unwrap()==b']' && os==false {
+                    break;
+                }
+            }   
+            break;
+        }
+    }
+    return result;
 }
