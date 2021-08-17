@@ -161,6 +161,12 @@ decl_error! {
         SellerPhoneNumberIsWrong,
         /// Seller data has not been found on chain
         SellerDataNotFound,
+        /// Seller Default language is wrong
+        SellerDefaultLanguageIsWrong,
+        /// Seller default unit of measurement is wrong
+        SellerDefaultUnitMeasurementIsWrong,
+        // Default return policy in days cannot be more than 10 years
+        DefaultReturnPolicyIsExcessive,
     }
 }
 
@@ -399,6 +405,23 @@ decl_module! {
                 ensure!(borderlatitude.len()>0,Error::<T>::ShipmentAreaBorderLatitudeIsMissing);
                 ensure!(borderlongitude.len()>0,Error::<T>::ShipmentAreaBorderLongituteIsMissing);
             }
+            // check for optional default language
+            let defaultlanguage=json_get_value(configuration.clone(),"defaultlanguage".as_bytes().to_vec());
+            if defaultlanguage.len()>0 {    
+                ensure!(aisland_validate_languagecode(defaultlanguage),Error::<T>::SellerDefaultLanguageIsWrong);
+            }
+            // check for optional default unit of measurement
+            let defaultunitmeasurement=json_get_value(configuration.clone(),"defaultunitmeasurement".as_bytes().to_vec());
+            if defaultunitmeasurement.len()>0 {    
+                ensure!(aisland_validate_unitmeasurement(defaultunitmeasurement),Error::<T>::SellerDefaultUnitMeasurementIsWrong);
+            }
+            // check for default return policy in days
+            let defaultreturnpolicy=json_get_value(configuration.clone(),"defaultreturnpolicy".as_bytes().to_vec());
+            if defaultreturnpolicy.len()>0 {    
+                let drp=vecu8_to_u32(defaultreturnpolicy);
+                ensure!(drp<3650,Error::<T>::DefaultReturnPolicyIsExcessive);
+            }
+            //store seller on chain
             if Sellers::<T>::contains_key(&sender)==false {
                 // Insert new seller
                 Sellers::<T>::insert(sender.clone(),configuration.clone());
@@ -1061,6 +1084,225 @@ fn aisland_validate_phonenumber(phonenumber:Vec<u8>) -> bool {
     }
     valid
 }
+// function to validate a language code
+fn aisland_validate_languagecode(language:Vec<u8>) -> bool {
+    // check maximum lenght
+    if language.len()>2{
+        return false;
+    }
+    // load allowed language code
+    let mut p: Vec<Vec<u8>> = Vec::new();
+    p.push("aa".into());
+    p.push("ab".into());
+    p.push("ae".into());
+    p.push("af".into());
+    p.push("ak".into());
+    p.push("am".into());
+    p.push("an".into());
+    p.push("ar".into());
+    p.push("as".into());
+    p.push("av".into());
+    p.push("ay".into());
+    p.push("az".into());
+    p.push("ba".into());
+    p.push("be".into());
+    p.push("bg".into());
+    p.push("bh".into());
+    p.push("bi".into());
+    p.push("bm".into());
+    p.push("bn".into());
+    p.push("bo".into());
+    p.push("br".into());
+    p.push("bs".into());
+    p.push("ca".into());
+    p.push("ce".into());
+    p.push("ch".into());
+    p.push("co".into());
+    p.push("cr".into());
+    p.push("cs".into());
+    p.push("cu".into());
+    p.push("cv".into());
+    p.push("cy".into());
+    p.push("da".into());
+    p.push("de".into());
+    p.push("dv".into());
+    p.push("dz".into());
+    p.push("ee".into());
+    p.push("el".into());
+    p.push("en".into());
+    p.push("eo".into());
+    p.push("es".into());
+    p.push("et".into());
+    p.push("eu".into());
+    p.push("fa".into());
+    p.push("ff".into());
+    p.push("fi".into());
+    p.push("fj".into());
+    p.push("fo".into());
+    p.push("fr".into());
+    p.push("fy".into());
+    p.push("ga".into());
+    p.push("gd".into());
+    p.push("gl".into());
+    p.push("gn".into());
+    p.push("gu".into());
+    p.push("gv".into());
+    p.push("ha".into());
+    p.push("he".into());
+    p.push("hi".into());
+    p.push("ho".into());
+    p.push("hr".into());
+    p.push("ht".into());
+    p.push("hu".into());
+    p.push("hy".into());
+    p.push("hz".into());
+    p.push("ia".into());
+    p.push("id".into());
+    p.push("ie".into());
+    p.push("ig".into());
+    p.push("ii".into());
+    p.push("ik".into());
+    p.push("io".into());
+    p.push("is".into());
+    p.push("it".into());
+    p.push("iu".into());
+    p.push("ja".into());
+    p.push("jv".into());
+    p.push("ka".into());
+    p.push("kg".into());
+    p.push("ki".into());
+    p.push("kj".into());
+    p.push("kk".into());
+    p.push("kl".into());
+    p.push("km".into());
+    p.push("kn".into());
+    p.push("ko".into());
+    p.push("kr".into());
+    p.push("ks".into());
+    p.push("ku".into());
+    p.push("kv".into());
+    p.push("kw".into());
+    p.push("ky".into());
+    p.push("la".into());
+    p.push("lb".into());
+    p.push("lg".into());
+    p.push("li".into());
+    p.push("ln".into());
+    p.push("lo".into());
+    p.push("lt".into());
+    p.push("lu".into());
+    p.push("lv".into());
+    p.push("mg".into());
+    p.push("mh".into());
+    p.push("mi".into());
+    p.push("mk".into());
+    p.push("ml".into());
+    p.push("mn".into());
+    p.push("mr".into());
+    p.push("ms".into());
+    p.push("mt".into());
+    p.push("my".into());
+    p.push("na".into());
+    p.push("nb".into());
+    p.push("nd".into());
+    p.push("ne".into());
+    p.push("ng".into());
+    p.push("nl".into());
+    p.push("nn".into());
+    p.push("no".into());
+    p.push("nr".into());
+    p.push("nv".into());
+    p.push("ny".into());
+    p.push("oc".into());
+    p.push("oj".into());
+    p.push("om".into());
+    p.push("or".into());
+    p.push("os".into());
+    p.push("pa".into());
+    p.push("pi".into());
+    p.push("pl".into());
+    p.push("ps".into());
+    p.push("pt".into());
+    p.push("qu".into());
+    p.push("rm".into());
+    p.push("rn".into());
+    p.push("ro".into());
+    p.push("ru".into());
+    p.push("rw".into());
+    p.push("sa".into());
+    p.push("sc".into());
+    p.push("sd".into());
+    p.push("se".into());
+    p.push("sg".into());
+    p.push("si".into());
+    p.push("sk".into());
+    p.push("sl".into());
+    p.push("sm".into());
+    p.push("sn".into());
+    p.push("so".into());
+    p.push("sq".into());
+    p.push("sr".into());
+    p.push("ss".into());
+    p.push("st".into());
+    p.push("su".into());
+    p.push("sv".into());
+    p.push("sw".into());
+    p.push("ta".into());
+    p.push("te".into());
+    p.push("tg".into());
+    p.push("th".into());
+    p.push("ti".into());
+    p.push("tk".into());
+    p.push("tl".into());
+    p.push("tn".into());
+    p.push("to".into());
+    p.push("tr".into());
+    p.push("ts".into());
+    p.push("tt".into());
+    p.push("tw".into());
+    p.push("ty".into());
+    p.push("ug".into());
+    p.push("uk".into());
+    p.push("ur".into());
+    p.push("uz".into());
+    p.push("ve".into());
+    p.push("vi".into());
+    p.push("vo".into());
+    p.push("wa".into());
+    p.push("wo".into());
+    p.push("xh".into());
+    p.push("yi".into());
+    p.push("yo".into());
+    p.push("za".into());
+    p.push("zh".into());
+    p.push("zu".into());
+    let mut valid=false;
+    for xp in p {
+        if xp==language {
+            valid =true;
+        }
+    }
+    valid
+}
+// function to validate the unit measurement system
+fn aisland_validate_unitmeasurement(unitmeasurement:Vec<u8>) -> bool {
+    // check maximum lenght
+    if unitmeasurement.len()>2{
+        return false;
+    }
+    // load allowed language code
+    let mut p: Vec<Vec<u8>> = Vec::new();
+    p.push("ms".into());  // metric system (Main part of the world)
+    p.push("iu".into());  // Imperial System (UK and colonies) 
+    p.push("us".into());  // United States customary units (Us and Liberia)
+    let mut valid=false;
+    for xp in p {
+        if xp==unitmeasurement {
+            valid =true;
+        }
+    }
+    valid
+}
 // function to get value of a field with a complex array like [{....},{.....}] for Substrate runtime (no std library and no variable allocation)
 fn json_get_complexarray(j:Vec<u8>,key:Vec<u8>) -> Vec<u8> {
     let mut result=Vec::new();
@@ -1102,3 +1344,11 @@ fn json_get_complexarray(j:Vec<u8>,key:Vec<u8>) -> Vec<u8> {
     }
     return result;
 }
+// function to convert vec<u8> to u32
+fn vecu8_to_u32(v: Vec<u8>) -> u32 {
+    let vslice = v.as_slice();
+    let vstr = str::from_utf8(&vslice).unwrap_or("0");
+    let vvalue: u32 = u32::from_str(vstr).unwrap_or(0);
+    vvalue
+}
+
