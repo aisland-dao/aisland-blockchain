@@ -38,6 +38,8 @@ decl_storage! {
         IsoCountries get(fn get_iso_country): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Standard Iso dial code for country code
         IsoDialcode get(fn get_iso_dialcode): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
+        // Standard Iso dial code for country code
+        Currencies get(fn get_currency): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
     }
 }
 
@@ -57,6 +59,8 @@ decl_event!(
         MarketPlaceIsoCountryDestroyed(Vec<u8>),            // Iso contry code has been destroyed
         MarketPlaceIsoDialCodeCreated(Vec<u8>, Vec<u8>),    // New country dial code has been created
         MarketPlaceIsoDialCodeDestroyed(Vec<u8>),           // A country dial code has been destroyed
+        MarketPlaceCurrencyCodeCreated(Vec<u8>, Vec<u8>),   // A new currency has been created
+        MarketPlaceCurrencyDestroyed(Vec<u8>),              // A currency has been destroyed
     }
 );
 
@@ -165,8 +169,34 @@ decl_error! {
         SellerDefaultLanguageIsWrong,
         /// Seller default unit of measurement is wrong
         SellerDefaultUnitMeasurementIsWrong,
-        // Default return policy in days cannot be more than 10 years
+        /// Default return policy in days cannot be more than 10 years
         DefaultReturnPolicyIsExcessive,
+        /// Currency code should be between 2 and 5 bytes
+        WrongLengthCurrencyCode,
+        /// Currency name is too short, at the last 3 bytes are required 
+        CurrencyNameTooShort,
+        /// Currency name is too long, maximum allowed are 32 bytes
+        CurrencyNameTooLong,
+        /// Currency category can be "c" for crypto currency like Bitcoin or "f" for fiat/national currency like USD
+        CurrencyCategoryIswrong,
+        /// Blockchain name is too short, minimum 3 bytes
+        BlockchainNameTooShort,
+        /// Blockchain name is too long, maximum 32 bytes
+        BlockchainNameTooLong,
+        /// Currency code is already present
+        CurrencyCodeAlreadyPresent,
+        /// Currency code has not been found
+        CurrencyCodeNotFound,
+        /// Product Description is too short, minimum 10 bytes
+        ProductDescriptionTooShort,
+        /// Product Description is too long, maximum 64 bytes
+        ProductDescriptionTooLong,
+        /// Product Long Description is too short, minimum 64 bytes
+        ProductLongDescriptionTooShort,
+        /// Product Long Description is too long, maximum 4096 bytes
+        ProductLongDescriptionTooLong,
+        /// Product price must be > zero
+        ProductPriceCannotBeZero,
     }
 }
 
@@ -450,6 +480,39 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
+        /// Create/update a Product
+        /// Example:
+        /// {"description":"xxxx","longdescription","xxxx","price":1000,"currencycode","USDC"}
+        #[weight = 10000]
+        pub fn create_update_product(origin, configuration: Vec<u8>) -> dispatch::DispatchResult {
+            // check the request is signed
+            let sender = ensure_signed(origin)?;
+            //check configuration length
+            ensure!(configuration.len() > 12, Error::<T>::ConfigurationTooShort);
+            ensure!(configuration.len() < 32768, Error::<T>::ConfigurationTooLong);
+            // check json validity
+            ensure!(json_check_validity(configuration.clone()),Error::<T>::InvalidJson);
+            // check for mandatory short description
+            let description=json_get_value(configuration.clone(),"description".as_bytes().to_vec());
+            ensure!(description.len()>=10, Error::<T>::ProductDescriptionTooShort);
+            ensure!(description.len()<=64, Error::<T>::ProductDescriptionTooLong);
+            // check for mandatory long description
+            let longdescription=json_get_value(configuration.clone(),"longdescription".as_bytes().to_vec());
+            ensure!(longdescription.len()>=64, Error::<T>::ProductLongDescriptionTooShort);
+            ensure!(longdescription.len()<=4096, Error::<T>::ProductLongDescriptionTooLong);
+            // check for price >0
+            let price=json_get_value(configuration.clone(),"price".as_bytes().to_vec());
+            let pricevalue=vecu8_to_u128(price);
+            ensure!(pricevalue>0,Error::<T>::ProductPriceCannotBeZero);
+            // check for mandatory currency code
+            let currencycode=json_get_value(configuration.clone(),"currency".as_bytes().to_vec());
+            ensure!(Currencies::contains_key(&currencycode), Error::<T>::CurrencyCodeNotFound);
+            //TODO othe checking and writing the data on chain            
+
+            // Return a successful DispatchResult
+            Ok(())
+        }
+    
         /// Create a new Iso country code and name
         #[weight = 1000]
         pub fn create_iso_country(origin, countrycode: Vec<u8>, countryname: Vec<u8>) -> dispatch::DispatchResult {
@@ -516,6 +579,62 @@ decl_module! {
              // Return a successful DispatchResult
              Ok(())
          }
+         /// Create a new Currency code with name and other info in a json structure
+         /// {"name":"Bitcoin","category":"c(rypto)/f(iat)","countrycode":"countryisocode","blockchain":"Ethereum(...)","address":"xxxfor_crypto_currencyxxx"}
+        #[weight = 1000]
+        pub fn create_currency(origin, currencycode: Vec<u8>, info: Vec<u8>) -> dispatch::DispatchResult {
+            // check the request is signed from the Super User
+            let _sender = ensure_root(origin)?;
+            // check currency code length is between 3 and 5 bytes
+            ensure!((currencycode.len()>=3 && currencycode.len()<=5), Error::<T>::WrongLengthCurrencyCode);
+            // check for a valid json structure
+            ensure!(json_check_validity(currencycode.clone()),Error::<T>::InvalidJson);
+            // check for name
+            let name=json_get_value(info.clone(),"name".as_bytes().to_vec());
+            ensure!(name.len()>=3, Error::<T>::CurrencyNameTooShort);
+            ensure!(name.len()<=32, Error::<T>::CurrencyNameTooLong);
+            // check for type of currency (fiat/crypto)
+            let category=json_get_value(info.clone(),"category".as_bytes().to_vec());
+            let mut c: Vec<u8>= Vec::new();
+            c.push(b'c');
+            let mut f: Vec<u8>= Vec::new();
+            f.push(b'f');
+            ensure!((category==c || category==f),Error::<T>::CurrencyCategoryIswrong);
+            // check for the country code in case of Fiat currency
+            if category==f {
+                let countrycode=json_get_value(info.clone(),"country".as_bytes().to_vec());
+                ensure!(IsoCountries::contains_key(&countrycode), Error::<T>::CountryCodeNotFound);
+            }
+            // check for the blockchain in case of Crypto currency
+            if category==c {
+                let blockchain=json_get_value(info.clone(),"blockchain".as_bytes().to_vec());
+                ensure!(blockchain.len()>=3, Error::<T>::BlockchainNameTooShort);
+                ensure!(blockchain.len()<=32, Error::<T>::BlockchainNameTooLong);
+            }
+            // check the currency is not alreay present on chain
+            ensure!(!Currencies::contains_key(&currencycode), Error::<T>::CurrencyCodeAlreadyPresent);
+            // store the Currency Code and info
+            Currencies::insert(currencycode.clone(),info.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceCurrencyCodeCreated(currencycode,info));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy a currency
+        #[weight = 1000]
+        pub fn destroy_currency(origin, currencycode: Vec<u8>,) -> dispatch::DispatchResult {
+            // check the request is signed from the Super User
+            let _sender = ensure_root(origin)?;
+            // verify the currency code exists
+            ensure!(Currencies::contains_key(&currencycode), Error::<T>::CurrencyCodeNotFound);
+            // Remove currency code
+            Currencies::take(currencycode.clone());
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceCurrencyDestroyed(currencycode));
+            // Return a successful DispatchResult
+            Ok(())
+        }
     }
 }
 // function to validate a json string for no/std. It does not allocate of memory
@@ -1349,6 +1468,13 @@ fn vecu8_to_u32(v: Vec<u8>) -> u32 {
     let vslice = v.as_slice();
     let vstr = str::from_utf8(&vslice).unwrap_or("0");
     let vvalue: u32 = u32::from_str(vstr).unwrap_or(0);
+    vvalue
+}
+// function to convert vec<u8> to u128
+fn vecu8_to_u128(v: Vec<u8>) -> u128 {
+    let vslice = v.as_slice();
+    let vstr = str::from_utf8(&vslice).unwrap_or("0");
+    let vvalue: u128 = u128::from_str(vstr).unwrap_or(0);
     vvalue
 }
 
