@@ -34,6 +34,8 @@ decl_storage! {
         ProductDepartments get(fn get_products_department): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Product Categories
         ProductCategories get(fn get_products_category): double_map hasher(blake2_128_concat) u32,hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Product Colors
+        ProductColors get(fn get_products_color): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Standard Iso country code and official name
         IsoCountries get(fn get_iso_country): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Standard Iso dial code for country code
@@ -61,6 +63,8 @@ decl_event!(
         MarketPlaceIsoDialCodeDestroyed(Vec<u8>),           // A country dial code has been destroyed
         MarketPlaceCurrencyCodeCreated(Vec<u8>, Vec<u8>),   // A new currency has been created
         MarketPlaceCurrencyDestroyed(Vec<u8>),              // A currency has been destroyed
+        MarketPlaceColorCreated(u32,Vec<u8>),               // A new color has been created
+        MarketPlaceColorDestroyed(u32),                     // A color has been removed
     }
 );
 
@@ -197,6 +201,26 @@ decl_error! {
         ProductLongDescriptionTooLong,
         /// Product price must be > zero
         ProductPriceCannotBeZero,
+        /// Features has a wrong IPFS address
+        FeaturesIpfsAddressisWrong,
+        /// Media files cannot be empty, high quality description is required.
+        MediaCannotBeEmpty,
+        /// Media Description is wrong, cannot be empty
+        MediaDescriptionIswrong,
+        /// Media filename is wrong, cannot be empty
+        MediaFileNameIsWrong,
+        /// Media Ipfs Address is wrong
+        MediaIpfsAddressIsWrong,
+        /// Color Uid cannot be zero
+        ColorUidCannotBeZero,
+        /// Color Description is too short
+        ColorDescriptionTooShort,
+        /// Color Description is too long
+        ColorDescriptionTooLong,
+        /// Color already present with the same uid
+        ColorAlreadyPresent,
+        /// Color not found
+        ColorNotFound,
     }
 }
 
@@ -292,7 +316,7 @@ decl_module! {
             ensure!(json_check_validity(configuration.clone()),Error::<T>::InvalidJson);
             // checking seller type
             let sellertype=json_get_value(configuration.clone(),"sellertype".as_bytes().to_vec());
-            let sellertypeu32=vec_to_u32(sellertype);
+            let sellertypeu32=vecu8_to_u32(sellertype);
             ensure!(sellertypeu32==1 || sellertypeu32==2 || sellertypeu32==3 ,Error::<T>::SellerTypeInvalid);
             // checking company name or name/surname
             let sellername=json_get_value(configuration.clone(),"name".as_bytes().to_vec());
@@ -396,8 +420,8 @@ decl_module! {
                 }
                 let category=json_get_value(configuration.clone(),"category".as_bytes().to_vec());
                 let department=json_get_value(configuration.clone(),"department".as_bytes().to_vec());
-                let categoryu32=vec_to_u32(category);
-                let departmentu32=vec_to_u32(department);
+                let categoryu32=vecu8_to_u32(category);
+                let departmentu32=vecu8_to_u32(department);
                 ensure!(ProductCategories::contains_key(categoryu32,departmentu32)==true, Error::<T>::ProductCategoryNotFound);
                 x=x+1;
                 nc=nc+1;
@@ -415,7 +439,7 @@ decl_module! {
                 }
                 let country=json_get_value(configuration.clone(),"country".as_bytes().to_vec());
                 let inout=json_get_value(configuration.clone(),"inout".as_bytes().to_vec());
-                let inoutv=vec_to_u32(inout);
+                let inoutv=vecu8_to_u32(inout);
                 ensure!(IsoCountries::contains_key(country)==true, Error::<T>::CountryCodeNotFound);
                 ensure!(inoutv==0 || inoutv==1,Error::<T>::IncludedExcludedCountryValueIsMissing);
                 x=x+1;
@@ -489,7 +513,7 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             //check configuration length
             ensure!(configuration.len() > 12, Error::<T>::ConfigurationTooShort);
-            ensure!(configuration.len() < 32768, Error::<T>::ConfigurationTooLong);
+            ensure!(configuration.len() < 65536, Error::<T>::ConfigurationTooLong);
             // check json validity
             ensure!(json_check_validity(configuration.clone()),Error::<T>::InvalidJson);
             // check for mandatory short description
@@ -507,8 +531,43 @@ decl_module! {
             // check for mandatory currency code
             let currencycode=json_get_value(configuration.clone(),"currency".as_bytes().to_vec());
             ensure!(Currencies::contains_key(&currencycode), Error::<T>::CurrencyCodeNotFound);
+            // check
             //TODO othe checking and writing the data on chain            
+            // check for features
+            let features=json_get_value(configuration.clone(),"features".as_bytes().to_vec());
+            ensure!((features.len()==0 || features.len()>=32),Error::<T>::FeaturesIpfsAddressisWrong);
+            // Media is an array of photos,videos and document being part of the product documentation
+            // the structure can be [{"description":"xxxxx","filename":"xxxxxxx"},"ipfs":"xxxxxxx",("color":"xxxx")},{..}]
+            // TODO (check if color is present in the corresponding field)
+            let media=json_get_complexarray(configuration.clone(),"media".as_bytes().to_vec());
+            ensure!(media.len()>10,Error::<T>::MediaCannotBeEmpty);
+            let mut x=0;
+            loop {
+                let jr=json_get_recordvalue(media.clone(),x);
+                if jr.len()==0 {
+                    break;
+                }
+                let description=json_get_value(jr.clone(),"description".as_bytes().to_vec());
+                ensure!(description.len() > 0, Error::<T>::MediaDescriptionIswrong); 
+                let filename=json_get_value(jr.clone(),"filename".as_bytes().to_vec());
+                ensure!(filename.len() > 0, Error::<T>::MediaFileNameIsWrong); 
+                let ipfs=json_get_value(jr.clone(),"ipfs".as_bytes().to_vec());
+                ensure!(ipfs.len()>=32, Error::<T>::MediaIpfsAddressIsWrong);
+                x=x+1;
+            }
+            // check colors if enabled
+            let colors=json_get_complexarray(configuration.clone(),"colors".as_bytes().to_vec());
+            if colors.len()>0 {
+                x=0;
+                loop {
+                    let c=json_get_arrayvalue(colors.clone(),x);
+                    if c.len()==0 {
+                        break;
+                    }
+                }
+            }
 
+        
             // Return a successful DispatchResult
             Ok(())
         }
@@ -635,71 +694,108 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
+        /// Create a new product Color
+        #[weight = 1000]
+        pub fn create_product_color(origin, uid: u32, description: Vec<u8>) -> dispatch::DispatchResult {
+            // check the request is signed from root
+            let _sender = ensure_root(origin)?;
+            // check uid >0
+            ensure!(uid > 0, Error::<T>::ColorUidCannotBeZero);
+            //check description length
+            ensure!(description.len() >= 2, Error::<T>::ColorDescriptionTooShort);
+            ensure!(description.len() < 32, Error::<T>::ColorDescriptionTooLong);
+            // check the color is not alreay present on chain
+            ensure!(ProductColors::contains_key(uid)==false, Error::<T>::ColorAlreadyPresent);
+            // store the color
+            ProductColors::insert(uid,description.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceColorCreated(uid,description));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy a product department
+        #[weight = 1000]
+        pub fn destroy_product_color(origin, uid: u32) -> dispatch::DispatchResult {
+            // check the request is signed from Super User
+            let _sender = ensure_root(origin)?;
+            // verify the color exists
+            ensure!(ProductColors::contains_key(&uid)==true, Error::<T>::ColorNotFound);
+            // Remove color
+            ProductColors::take(uid);
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceColorDestroyed(uid));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        
     }
 }
 // function to validate a json string for no/std. It does not allocate of memory
-fn json_check_validity(j: Vec<u8>) -> bool {
+fn json_check_validity(j:Vec<u8>) -> bool{	
     // minimum lenght of 2
-    if j.len() < 2 {
+    if j.len()<2 {
         return false;
     }
     // checks star/end with {}
-    if *j.get(0).unwrap() == b'{' && *j.get(j.len() - 1).unwrap() != b'}' {
+    if *j.get(0).unwrap()==b'{' && *j.get(j.len()-1).unwrap()!=b'}' {
         return false;
     }
     // checks start/end with []
-    if *j.get(0).unwrap() == b'[' && *j.get(j.len() - 1).unwrap() != b']' {
+    if *j.get(0).unwrap()==b'[' && *j.get(j.len()-1).unwrap()!=b']' {
         return false;
     }
     // check that the start is { or [
-    if *j.get(0).unwrap() != b'{' && *j.get(0).unwrap() != b'[' {
-        return false;
+    if *j.get(0).unwrap()!=b'{' && *j.get(0).unwrap()!=b'[' {
+            return false;
     }
     //checks that end is } or ]
-    if *j.get(j.len() - 1).unwrap() != b'}' && *j.get(j.len() - 1).unwrap() != b']' {
+    if *j.get(j.len()-1).unwrap()!=b'}' && *j.get(j.len()-1).unwrap()!=b']' {
         return false;
     }
     //checks " opening/closing and : as separator between name and values
-    let mut s: bool = true;
-    let mut d: bool = true;
-    let mut pg: bool = true;
-    let mut ps: bool = true;
+    let mut s:bool=true;
+    let mut d:bool=true;
+    let mut pg:bool=true;
+    let mut ps:bool=true;
     let mut bp = b' ';
     for b in j {
-        if b == b'[' && s {
-            ps = false;
+        if b==b'[' && s {
+            ps=false;
         }
-        if b == b']' && s && ps == false {
-            ps = true;
-        } else if b == b']' && s && ps == true {
-            ps = false;
+        if b==b']' && s && ps==false {
+            ps=true;
         }
-        if b == b'{' && s {
-            pg = false;
+        else if b==b']' && s && ps==true {
+            ps=false;
         }
-        if b == b'}' && s && pg == false {
-            pg = true;
-        } else if b == b'}' && s && pg == true {
-            pg = false;
+        if b==b'{' && s {
+            pg=false;
+        }
+        if b==b'}' && s && pg==false {
+            pg=true;
+        }
+        else if b==b'}' && s && pg==true {
+            pg=false;
         }
         if b == b'"' && s && bp != b'\\' {
-            s = false;
-            bp = b;
-            d = false;
+            s=false;
+            bp=b;
+            d=false;
             continue;
         }
         if b == b':' && s {
-            d = true;
-            bp = b;
+            d=true;
+            bp=b;
             continue;
         }
         if b == b'"' && !s && bp != b'\\' {
-            s = true;
-            bp = b;
-            d = true;
+            s=true;
+            bp=b;
+            d=true;
             continue;
         }
-        bp = b;
+        bp=b;
     }
     //fields are not closed properly
     if !s {
@@ -717,109 +813,174 @@ fn json_check_validity(j: Vec<u8>) -> bool {
     return true;
 }
 // function to get record {} from multirecord json structure [{..},{.. }], it returns an empty Vec when the records is not present
-fn json_get_recordvalue(ar: Vec<u8>, p: i32) -> Vec<u8> {
-    let mut result = Vec::new();
-    let mut op = true;
-    let mut cn = 0;
-    let mut lb = b' ';
+fn json_get_recordvalue(ar:Vec<u8>,p:i32) -> Vec<u8> {
+    let mut result=Vec::new();
+    let mut op=true;
+    let mut cn=0;
+    let mut lb=b' ';
     for b in ar {
-        if b == b',' && op == true {
-            cn = cn + 1;
+        if b==b',' && op==true {
+            cn=cn+1;
             continue;
         }
-        if b == b'[' && op == true && lb != b'\\' {
+        if b==b'[' && op==true && lb!=b'\\' {
             continue;
         }
-        if b == b']' && op == true && lb != b'\\' {
+        if b==b']' && op==true && lb!=b'\\' {
             continue;
         }
-        if b == b'{' && op == true && lb != b'\\' {
-            op = false;
+        if b==b'{' && op==true && lb!=b'\\' { 
+            op=false;
         }
-        if b == b'}' && op == false && lb != b'\\' {
-            op = true;
+        if b==b'}' && op==false && lb!=b'\\' {
+            op=true;
         }
         // field found
-        if cn == p {
+        if cn==p {
             result.push(b);
         }
-        lb = b.clone();
+        lb=b.clone();
+    }
+    return result;
+}
+// function to get a field value from array field [1,2,3,4,100], it returns an empty Vec when the records is not present
+fn json_get_arrayvalue(ar:Vec<u8>,p:i32) -> Vec<u8> {
+    let mut result=Vec::new();
+    let mut op=true;
+    let mut cn=0;
+    let mut lb=b' ';
+    for b in ar {
+        if b==b',' && op==true {
+            cn=cn+1;
+            continue;
+        }
+        if b==b'[' && op==true && lb!=b'\\' {
+            continue;
+        }
+        if b==b']' && op==true && lb!=b'\\' {
+            continue;
+        }
+        if b==b'"' && op==true && lb!=b'\\' {
+            continue;
+        }
+        if b==b'"' && op==true && lb!=b'\\' { 
+            op=false;
+        }
+        if b==b'"' && op==false && lb!=b'\\' {
+            op=true;
+        }
+        // field found
+        if cn==p {
+            result.push(b);
+        }
+        lb=b.clone();
     }
     return result;
 }
 
 // function to get value of a field for Substrate runtime (no std library and no variable allocation)
-fn json_get_value(j: Vec<u8>, key: Vec<u8>) -> Vec<u8> {
-    let mut result = Vec::new();
-    let mut k = Vec::new();
+fn json_get_value(j:Vec<u8>,key:Vec<u8>) -> Vec<u8> {
+    let mut result=Vec::new();
+    let mut k=Vec::new();
     let keyl = key.len();
     let jl = j.len();
     k.push(b'"');
-    for xk in 0..keyl {
+    for xk in 0..keyl{
         k.push(*key.get(xk).unwrap());
     }
     k.push(b'"');
     k.push(b':');
     let kl = k.len();
-    for x in 0..jl {
-        let mut m = 0;
-        let mut xx = 0;
-        if x + kl > jl {
+    for x in  0..jl {
+        let mut m=0;
+        let mut xx=0;
+        if x+kl>jl {
             break;
         }
-        for i in x..x + kl {
-            if *j.get(i).unwrap() == *k.get(xx).unwrap() {
-                m = m + 1;
+        for i in x..x+kl {
+            if *j.get(i).unwrap()== *k.get(xx).unwrap() {
+                m=m+1;
             }
-            xx = xx + 1;
+            xx=xx+1;
         }
-        if m == kl {
-            let mut lb = b' ';
-            let mut op = true;
-            let mut os = true;
-            for i in x + kl..jl - 1 {
-                if *j.get(i).unwrap() == b'[' && op == true && os == true {
-                    os = false;
+        if m==kl{
+            let mut lb=b' ';
+            let mut op=true;
+            let mut os=true;
+            for i in x+kl..jl-1 {
+                if *j.get(i).unwrap()==b'[' && op==true && os==true{
+                    os=false;
                 }
-                if *j.get(i).unwrap() == b'}' && op == true && os == false {
-                    os = true;
+                if *j.get(i).unwrap()==b'}' && op==true && os==false{
+                    os=true;
                 }
-                if *j.get(i).unwrap() == b':' && op == true {
+                if *j.get(i).unwrap()==b':' && op==true{
                     continue;
                 }
-                if *j.get(i).unwrap() == b'"' && op == true && lb != b'\\' {
-                    op = false;
-                    continue;
+                if *j.get(i).unwrap()==b'"' && op==true && lb!=b'\\' {
+                    op=false;
+                    continue
                 }
-                if *j.get(i).unwrap() == b'"' && op == false && lb != b'\\' {
+                if *j.get(i).unwrap()==b'"' && op==false && lb!=b'\\' {
                     break;
                 }
-                if *j.get(i).unwrap() == b'}' && op == true {
+                if *j.get(i).unwrap()==b'}' && op==true{
                     break;
                 }
-                if *j.get(i).unwrap() == b',' && op == true && os == true {
+                if *j.get(i).unwrap()==b']' && op==true{
+                    break;
+                }
+                if *j.get(i).unwrap()==b',' && op==true && os==true{
                     break;
                 }
                 result.push(j.get(i).unwrap().clone());
-                lb = j.get(i).unwrap().clone();
-            }
+                lb=j.get(i).unwrap().clone();
+            }   
             break;
         }
     }
     return result;
 }
-//function to convert a vector to u32 with a default value of 0
-fn vec_to_u32(v:Vec<u8>) -> u32{
-    let v_slice=v.as_slice();
-    let v_str=match str::from_utf8(&v_slice){
-        Ok(f) => f,
-        Err(_) => "0"
-    };
-    let v_value:u32 = match u32::from_str(v_str){
-        Ok(f) => f,
-        Err(_) => 0,
-    };
-    v_value
+// function to get value of a field with a complex array like [{....},{.....}] for Substrate runtime (no std library and no variable allocation)
+fn json_get_complexarray(j:Vec<u8>,key:Vec<u8>) -> Vec<u8> {
+    let mut result=Vec::new();
+    let mut k=Vec::new();
+    let keyl = key.len();
+    let jl = j.len();
+    k.push(b'"');
+    for xk in 0..keyl{
+        k.push(*key.get(xk).unwrap());
+    }
+    k.push(b'"');
+    k.push(b':');
+    let kl = k.len();
+    for x in  0..jl {
+        let mut m=0;
+        let mut xx=0;
+        if x+kl>jl {
+            break;
+        }
+        for i in x..x+kl {
+            if *j.get(i).unwrap()== *k.get(xx).unwrap() {
+                m=m+1;
+            }
+            xx=xx+1;
+        }
+        if m==kl{
+            let mut os=true;
+            for i in x+kl..jl-1 {
+                if *j.get(i).unwrap()==b'[' && os==true{
+                    os=false;
+                }
+                result.push(j.get(i).unwrap().clone());
+                if *j.get(i).unwrap()==b']' && os==false {
+                    break;
+                }
+            }   
+            break;
+        }
+    }
+    return result;
 }
 // function to validate and email address, return true/false
 fn aisland_validate_email(email:Vec<u8>) -> bool {
@@ -1421,47 +1582,6 @@ fn aisland_validate_unitmeasurement(unitmeasurement:Vec<u8>) -> bool {
         }
     }
     valid
-}
-// function to get value of a field with a complex array like [{....},{.....}] for Substrate runtime (no std library and no variable allocation)
-fn json_get_complexarray(j:Vec<u8>,key:Vec<u8>) -> Vec<u8> {
-    let mut result=Vec::new();
-    let mut k=Vec::new();
-    let keyl = key.len();
-    let jl = j.len();
-    k.push(b'"');
-    for xk in 0..keyl{
-        k.push(*key.get(xk).unwrap());
-    }
-    k.push(b'"');
-    k.push(b':');
-    let kl = k.len();
-    for x in  0..jl {
-        let mut m=0;
-        let mut xx=0;
-        if x+kl>jl {
-            break;
-        }
-        for i in x..x+kl {
-            if *j.get(i).unwrap()== *k.get(xx).unwrap() {
-                m=m+1;
-            }
-            xx=xx+1;
-        }
-        if m==kl{
-            let mut os=true;
-            for i in x+kl..jl-1 {
-                if *j.get(i).unwrap()==b'[' && os==true{
-                    os=false;
-                }
-                result.push(j.get(i).unwrap().clone());
-                if *j.get(i).unwrap()==b']' && os==false {
-                    break;
-                }
-            }   
-            break;
-        }
-    }
-    return result;
 }
 // function to convert vec<u8> to u32
 fn vecu8_to_u32(v: Vec<u8>) -> u32 {
