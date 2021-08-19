@@ -36,6 +36,8 @@ decl_storage! {
         ProductCategories get(fn get_products_category): double_map hasher(blake2_128_concat) u32,hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Product Colors
         ProductColors get(fn get_products_color): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Product Sizes
+        ProductSizes get(fn get_products_size): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Standard Iso country code and official name
         IsoCountries get(fn get_iso_country): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Standard Iso dial code for country code
@@ -65,6 +67,8 @@ decl_event!(
         MarketPlaceCurrencyDestroyed(Vec<u8>),              // A currency has been destroyed
         MarketPlaceColorCreated(u32,Vec<u8>),               // A new color has been created
         MarketPlaceColorDestroyed(u32),                     // A color has been removed
+        MarketPlaceSizeCreated(u32,Vec<u8>),                // A new size table has been created
+        MarketPlaceSizeDestroyed(u32),                      // A size table has been removed
     }
 );
 
@@ -221,6 +225,20 @@ decl_error! {
         ColorAlreadyPresent,
         /// Color not found
         ColorNotFound,
+        /// Size Uid cannot be Zero
+        SizeUidCannotBeZero,
+        /// Size info cannot be > 8192 bytes
+        SizeInfoTooLong,
+        /// Size already present with the same UID
+        SizeAlreadyPresent,
+        /// Size has not been found
+        SizeNotFound,
+        /// Size code is missing
+        SizeCodeIsMissing,
+        /// Size description is missing
+        SizeDescriptionIsMissing,
+        /// Size area is missing
+        SizeAreaIsMissing,
     }
 }
 
@@ -537,8 +555,7 @@ decl_module! {
             let features=json_get_value(configuration.clone(),"features".as_bytes().to_vec());
             ensure!((features.len()==0 || features.len()>=32),Error::<T>::FeaturesIpfsAddressisWrong);
             // Media is an array of photos,videos and document being part of the product documentation
-            // the structure can be [{"description":"xxxxx","filename":"xxxxxxx"},"ipfs":"xxxxxxx",("color":"xxxx")},{..}]
-            // TODO (check if color is present in the corresponding field)
+            // the structure can be [{"description":"xxxxx","filename":"xxxxxxx"},"ipfs":"xxxxxxx",("color":xx)},{..}]
             let media=json_get_complexarray(configuration.clone(),"media".as_bytes().to_vec());
             ensure!(media.len()>10,Error::<T>::MediaCannotBeEmpty);
             let mut x=0;
@@ -553,6 +570,11 @@ decl_module! {
                 ensure!(filename.len() > 0, Error::<T>::MediaFileNameIsWrong); 
                 let ipfs=json_get_value(jr.clone(),"ipfs".as_bytes().to_vec());
                 ensure!(ipfs.len()>=32, Error::<T>::MediaIpfsAddressIsWrong);
+                let color=json_get_value(jr.clone(),"color".as_bytes().to_vec());
+                if color.len()>0 {
+                    let colorvalue=vecu8_to_u32(color);
+                    ensure!(ProductColors::contains_key(&colorvalue), Error::<T>::ColorNotFound);
+                }
                 x=x+1;
             }
             // check colors if enabled
@@ -564,6 +586,8 @@ decl_module! {
                     if c.len()==0 {
                         break;
                     }
+                    let cv=vecu8_to_u32(c);
+                    ensure!(ProductColors::contains_key(&cv), Error::<T>::ColorNotFound);
                 }
             }
 
@@ -713,7 +737,7 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
-        /// Destroy a product department
+        /// Destroy a product color
         #[weight = 1000]
         pub fn destroy_product_color(origin, uid: u32) -> dispatch::DispatchResult {
             // check the request is signed from Super User
@@ -725,6 +749,54 @@ decl_module! {
             // Generate event
             //it can leave orphans, anyway it's a decision of the super user
             Self::deposit_event(RawEvent::MarketPlaceColorDestroyed(uid));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Create a new product Size
+        #[weight = 1000]
+        pub fn create_product_size(origin, uid: u32, info: Vec<u8>) -> dispatch::DispatchResult {
+            // check the request is signed from root
+            let _sender = ensure_root(origin)?;
+            // check uid >0
+            ensure!(uid > 0, Error::<T>::SizeUidCannotBeZero);
+            //check info length
+            ensure!(info.len() < 8192, Error::<T>::SizeInfoTooLong);
+            // checking sizes structure that must have some fields defined
+            let mut x=0;
+            loop {  
+                let sz=json_get_recordvalue(info.clone(),x);
+                if sz.len()==0 {
+                    break;
+                }
+                let code=json_get_value(info.clone(),"code".as_bytes().to_vec());
+                ensure!(code.len()>0,Error::<T>::SizeCodeIsMissing);
+                let description=json_get_value(info.clone(),"description".as_bytes().to_vec());
+                ensure!(description.len()>0,Error::<T>::SizeDescriptionIsMissing);
+                let area=json_get_value(info.clone(),"area".as_bytes().to_vec());
+                ensure!(area.len()>0,Error::<T>::SizeAreaIsMissing);
+                x=x+1;
+            }
+            // check the size is not alreay present on chain
+            ensure!(!ProductSizes::contains_key(uid), Error::<T>::SizeAlreadyPresent);
+            // store the Size
+            ProductSizes::insert(uid,info.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceSizeCreated(uid,info));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy a product size
+        #[weight = 1000]
+        pub fn destroy_product_size(origin, uid: u32) -> dispatch::DispatchResult {
+            // check the request is signed from Super User
+            let _sender = ensure_root(origin)?;
+            // verify the size exists
+            ensure!(ProductSizes::contains_key(&uid)==true, Error::<T>::SizeNotFound);
+            // Remove size
+            ProductSizes::take(uid);
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceSizeDestroyed(uid));
             // Return a successful DispatchResult
             Ok(())
         }
