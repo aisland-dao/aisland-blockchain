@@ -46,6 +46,8 @@ decl_storage! {
         Currencies get(fn get_currency): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Manufacturers name and website
         Manufacturers get(fn get_manufacturer): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Brand name and Manufacturer
+        Brands get(fn get_brand): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
     }
 }
 
@@ -73,6 +75,8 @@ decl_event!(
         MarketPlaceSizeDestroyed(u32),                      // A size table has been removed
         MarketPlaceManufacturerCreated(u32,Vec<u8>),        // A new manufacturer has been created
         MarketPlaceManufacturerDestroyed(u32),              // A manufacturer has been removed
+        MarketPlaceBrandCreated(u32,Vec<u8>),               // A new brand has been created
+        MarketPlaceBrandDestroyed(u32),                     // A brand has been removed
     }
 );
 
@@ -257,6 +261,16 @@ decl_error! {
         ManufacturerAlreadyPresent,
         /// Manufacturer has not been found
         ManufacturerNotFound,
+        /// Brand Id cannot be empty
+        BrandUidCannotBeZero,
+        /// Brand name must be minimum 4 bytes
+        BrandNameIsTooShort,
+        /// Brand name can be maximum 64 bytes
+        BrandNameIsTooLong,
+        /// Manufacturer is already present
+        BrandAlreadyPresent,
+        /// Brand has not been found
+        BrandNotFound,
     }
 }
 
@@ -859,7 +873,7 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
-        /// Destroy a manufacturer department
+        /// Destroy a manufacturer 
         #[weight = 1000]
         pub fn destroy_manufacturer(origin, uid: u32) -> dispatch::DispatchResult {
             // check the request is signed from Super User
@@ -871,6 +885,49 @@ decl_module! {
             // Generate event
             //it can leave orphans, anyway it's a decision of the super user
             Self::deposit_event(RawEvent::MarketPlaceManufacturerDestroyed(uid));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Create a new Brand
+        #[weight = 1000]
+        pub fn create_brand(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
+            // check the request is signed from root
+            let _sender = ensure_root(origin)?;
+            // check uid >0
+            ensure!(uid > 0, Error::<T>::BrandUidCannotBeZero);
+            // check valid json
+            ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
+            // check for name field
+            let name=json_get_value(info.clone(),"name".as_bytes().to_vec());
+            ensure!(name.len()>=4,Error::<T>::BrandNameIsTooShort);
+            ensure!(name.len()<=64,Error::<T>::BrandNameIsTooLong);
+            // check for website field
+            let manufacturer=json_get_value(info.clone(),"manufacturer".as_bytes().to_vec());
+            let mv=vecu8_to_u32(manufacturer);
+            ensure!(mv>0,Error::<T>::ManufacturerNotFound);
+            // check the manufacturer is  present on chain
+            ensure!(Manufacturers::contains_key(mv), Error::<T>::ManufacturerNotFound);
+            // check the brand is not present on chain
+            ensure!(!Brands::contains_key(uid), Error::<T>::BrandAlreadyPresent);
+            // store the brand
+            Brands::insert(uid,info.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceBrandCreated(uid,info));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy a Brand
+        #[weight = 1000]
+        pub fn destroy_brand(origin, uid: u32) -> dispatch::DispatchResult {
+            // check the request is signed from Super User
+            let _sender = ensure_root(origin)?;
+            // verify the brand exists
+            ensure!(Brands::contains_key(&uid), Error::<T>::BrandNotFound);
+            // Remove brand
+            Brands::take(uid);
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceBrandDestroyed(uid));
             // Return a successful DispatchResult
             Ok(())
         }
