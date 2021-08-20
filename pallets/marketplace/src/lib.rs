@@ -44,6 +44,8 @@ decl_storage! {
         IsoDialcode get(fn get_iso_dialcode): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Standard Iso dial code for country code
         Currencies get(fn get_currency): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
+        // Manufacturers name and website
+        Manufacturers get(fn get_manufacturer): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
     }
 }
 
@@ -69,6 +71,8 @@ decl_event!(
         MarketPlaceColorDestroyed(u32),                     // A color has been removed
         MarketPlaceSizeCreated(u32,Vec<u8>),                // A new size table has been created
         MarketPlaceSizeDestroyed(u32),                      // A size table has been removed
+        MarketPlaceManufacturerCreated(u32,Vec<u8>),        // A new manufacturer has been created
+        MarketPlaceManufacturerDestroyed(u32),              // A manufacturer has been removed
     }
 );
 
@@ -239,6 +243,20 @@ decl_error! {
         SizeDescriptionIsMissing,
         /// Size area is missing
         SizeAreaIsMissing,
+        /// Manufacturer Id cannot be empty
+        ManufacturerUidCannotBeZero,
+        /// Manufacturer name must be minimum 4 bytes
+        ManufacturerNameIsTooShort,
+        /// Manufacturer name can be maximum 64 bytes
+        ManufacturerNameIsTooLong,
+        /// Manufacturer website must be minimum 4 bytes
+        ManufacturerWebsiteIsTooShort,
+        /// Manufacturer name can be maximum 128 bytes
+        ManufacturerWebsiteIsTooLong,
+        /// Manufacturer is already present
+        ManufacturerAlreadyPresent,
+        /// Manufacturer has not been found
+        ManufacturerNotFound,
     }
 }
 
@@ -590,6 +608,19 @@ decl_module! {
                     ensure!(ProductColors::contains_key(&cv), Error::<T>::ColorNotFound);
                 }
             }
+            // check size if enabled
+            let sizes=json_get_complexarray(configuration.clone(),"sizes".as_bytes().to_vec());
+            if sizes.len()>0 {
+                x=0;
+                loop {
+                    let sz=json_get_arrayvalue(sizes.clone(),x);
+                    if sz.len()==0 {
+                        break;
+                    }
+                    let szv=vecu8_to_u32(sz);
+                    ensure!(ProductSizes::contains_key(&szv), Error::<T>::ColorNotFound);
+                }
+            }
 
         
             // Return a successful DispatchResult
@@ -761,6 +792,8 @@ decl_module! {
             ensure!(uid > 0, Error::<T>::SizeUidCannotBeZero);
             //check info length
             ensure!(info.len() < 8192, Error::<T>::SizeInfoTooLong);
+            // check valid json
+            ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
             // checking sizes structure that must have some fields defined
             let mut x=0;
             loop {  
@@ -797,6 +830,47 @@ decl_module! {
             // Generate event
             //it can leave orphans, anyway it's a decision of the super user
             Self::deposit_event(RawEvent::MarketPlaceSizeDestroyed(uid));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Create a new Manufacturer
+        #[weight = 1000]
+        pub fn create_manufacturer(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
+            // check the request is signed from root
+            let _sender = ensure_root(origin)?;
+            // check uid >0
+            ensure!(uid > 0, Error::<T>::ManufacturerUidCannotBeZero);
+            // check valid json
+            ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
+            // check for name field
+            let name=json_get_value(info.clone(),"name".as_bytes().to_vec());
+            ensure!(name.len()>=4,Error::<T>::ManufacturerNameIsTooShort);
+            ensure!(name.len()<=64,Error::<T>::ManufacturerNameIsTooLong);
+            // check for website field
+            let website=json_get_value(info.clone(),"website".as_bytes().to_vec());
+            ensure!(website.len()>=4,Error::<T>::ManufacturerWebsiteIsTooShort);
+            ensure!(website.len()<=64,Error::<T>::ManufacturerWebsiteIsTooLong);
+            // check the manufacturer is not alreay present on chain
+            ensure!(!Manufacturers::contains_key(uid), Error::<T>::ManufacturerAlreadyPresent);
+            // store the manufacturer
+            Manufacturers::insert(uid,info.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceManufacturerCreated(uid,info));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy a manufacturer department
+        #[weight = 1000]
+        pub fn destroy_manufacturer(origin, uid: u32) -> dispatch::DispatchResult {
+            // check the request is signed from Super User
+            let _sender = ensure_root(origin)?;
+            // verify the manufacturer exists
+            ensure!(Manufacturers::contains_key(&uid), Error::<T>::ManufacturerNotFound);
+            // Remove manufacturer
+            Manufacturers::take(uid);
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceManufacturerDestroyed(uid));
             // Return a successful DispatchResult
             Ok(())
         }
