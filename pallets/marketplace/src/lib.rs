@@ -52,6 +52,8 @@ decl_storage! {
         ProductModels get(fn get_product_model): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Shipping Companies
         Shippers get(fn get_shipper): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Shipping Companies
+        ShippingRates get(fn get_shipper_rate): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
     }
 }
 
@@ -85,6 +87,8 @@ decl_event!(
         MarketPlaceProductModelDestroyed(u32),              // a product model has been removed
         MarketPlaceShipperCreated(u32,Vec<u8>),             // A new shipper has been created
         MarketPlaceShipperDestroyed(u32),                   // A shipper has been removed
+        MarketShippingRateCreated(u32,Vec<u8>),             // A new shipping rate has been created
+        MarketShippingRateDestroyed(u32),                   // A shipping rate has been removed
     }
 );
 
@@ -309,6 +313,18 @@ decl_error! {
         JsonIsTooLong,
         /// Shipper has not been found
         ShipperNotFound,
+        /// Shipping rate ID cannot be zero/empty
+        ShippingRateUidCannotBeZero,
+        /// Shipper id is missing
+        ShipperIdIsMissing,
+        /// From kg field is missing
+        FromKgIsMissing,
+        /// To kg field is missing
+        ToKgIsMissing,
+        /// Shipping rate cannot be zero
+        ShippingRateCannotbeZero,
+        /// Shipping rate cannot be found
+        ShippingRatesNotFound,
     }
 }
 
@@ -995,6 +1011,75 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
+          /// Create new Shipping Rates
+          #[weight = 1000]
+          pub fn create_shipping_rates(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
+            // check the request is signed from root
+            let _sender = ensure_root(origin)?;
+            // check uid >0
+            ensure!(uid > 0, Error::<T>::ShippingRateUidCannotBeZero);
+            // check valid json
+            ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
+            // check for info field
+            ensure!(info.len()<=32768,Error::<T>::JsonIsTooLong);
+            // check for shipperid field
+            let shipperid=json_get_value(info.clone(),"shipperid".as_bytes().to_vec());
+            let shipperidv=vecu8_to_u32(shipperid);
+            ensure!(shipperidv>0,Error::<T>::ShipperIdIsMissing);   
+            ensure!(Shippers::contains_key(shipperidv),Error::<T>::ShipperNotFound);
+            // check for origincountry field
+            let origincountry=json_get_value(info.clone(),"origincountry".as_bytes().to_vec());
+            ensure!(IsoCountries::contains_key(origincountry.clone()),Error::<T>::OriginCountryNotPresent);
+            // check for currency field
+            let currency=json_get_value(info.clone(),"currency".as_bytes().to_vec());
+            ensure!(Currencies::contains_key(currency),Error::<T>::CurrencyCodeNotFound);
+            // check for rates 
+            let rates=json_get_complexarray(info.clone(),"rates".as_bytes().to_vec());
+            if rates.len()>0 {
+                let mut x=0;
+                loop {  
+                    let r=json_get_recordvalue(rates.clone(),x);
+                    if r.len()==0 {
+                        break;
+                    }
+                    // check for destination
+                    let dc=json_get_value(r.clone(),"destination".as_bytes().to_vec());
+                    ensure!(IsoCountries::contains_key(dc),Error::<T>::OriginCountryNotPresent);
+                    // check for fromkg
+                    let fromkg=json_get_value(r.clone(),"fromkg".as_bytes().to_vec());
+                    ensure!(fromkg.len()>0,Error::<T>::FromKgIsMissing);
+                    // check for tokg
+                    let tokg=json_get_value(r.clone(),"tokg".as_bytes().to_vec());
+                    ensure!(tokg.len()>0,Error::<T>::ToKgIsMissing);  
+                    // check for rates  (in the currency set)
+                    let rate=json_get_value(r.clone(),"rate".as_bytes().to_vec());
+                    let ratev=vecu8_to_u32(rate);
+                    ensure!(ratev>0,Error::<T>::ShippingRateCannotbeZero);  
+                    x=x+1;
+                }
+            }
+            // store the shpping rates
+            ShippingRates::insert(uid,info.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketShippingRateCreated(uid,info));
+            // Return a successful DispatchResult
+            Ok(())
+          }
+          /// Destroy Shipping Rates 
+          #[weight = 1000]
+          pub fn destroy_shipping_rate(origin, uid: u32) -> dispatch::DispatchResult {
+              // check the request is signed from Super User
+              let _sender = ensure_root(origin)?;
+              // verify the shipping rate exists
+              ensure!(ShippingRates::contains_key(&uid), Error::<T>::ShippingRatesNotFound);
+              // Remove shipper
+              Shippers::take(uid);
+              // Generate event
+              //it can leave orphans, anyway it's a decision of the super user
+              Self::deposit_event(RawEvent::MarketPlaceShipperDestroyed(uid));
+              // Return a successful DispatchResult
+              Ok(())
+          }
         /// Create a new Brand
         #[weight = 1000]
         pub fn create_brand(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
