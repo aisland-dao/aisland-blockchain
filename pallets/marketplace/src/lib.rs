@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![recursion_limit="256"]
 use core::str;
 use core::str::FromStr;
 /// Module to manage the function for the MarketPlace
@@ -38,6 +38,8 @@ decl_storage! {
         ProductColors get(fn get_products_color): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Product Sizes
         ProductSizes get(fn get_products_size): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Products Data
+        Products get(fn get_product): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Standard Iso country code and official name
         IsoCountries get(fn get_iso_country): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Standard Iso dial code for country code
@@ -89,6 +91,7 @@ decl_event!(
         MarketPlaceShipperDestroyed(u32),                   // A shipper has been removed
         MarketShippingRateCreated(u32,Vec<u8>),             // A new shipping rate has been created
         MarketShippingRateDestroyed(u32),                   // A shipping rate has been removed
+        MarketPlaceProductUpdated(u32,Vec<u8>),             // A product has been created or updated
     }
 );
 
@@ -325,6 +328,26 @@ decl_error! {
         ShippingRateCannotbeZero,
         /// Shipping rate cannot be found
         ShippingRatesNotFound,
+        /// Dimension lenght size is wrong
+        DimensionWrongLength,
+        /// Dimension wide size is wrong
+        DimensionWrongWide,
+        /// Dimension height size is wrong
+        DimensionWrongHeight,
+        /// Dimension weight size is wrong
+        DimensionWrongWeight,
+        /// UPC code is missing or is wrong
+        UniversalProductCodeIsWrong,
+        /// Center Latitude of the area is missing
+        CenterLatitudeIsMissing,
+        /// Center Longitude of the area is missing
+        CenterLongitudeIsMissing,
+        /// Border Latitude of the area is missing
+        BorderLatitudeIsMissing,
+        /// Center Longitude of the area is missing
+        BorderLongitudeIsMissing,
+        /// Invalid Api Url, should be an https or http address
+        InvalidApiUrl,
     }
 }
 
@@ -612,7 +635,7 @@ decl_module! {
         /// Example:
         /// {"description":"xxxx","longdescription","xxxx","price":1000,"currencycode","USDC"}
         #[weight = 10000]
-        pub fn create_update_product(origin, configuration: Vec<u8>) -> dispatch::DispatchResult {
+        pub fn create_update_product(origin, uid: u32, configuration: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed
             let sender = ensure_signed(origin)?;
             //check configuration length
@@ -635,8 +658,6 @@ decl_module! {
             // check for mandatory currency code
             let currencycode=json_get_value(configuration.clone(),"currency".as_bytes().to_vec());
             ensure!(Currencies::contains_key(&currencycode), Error::<T>::CurrencyCodeNotFound);
-            // check
-            //TODO othe checking and writing the data on chain            
             // check for features
             let features=json_get_value(configuration.clone(),"features".as_bytes().to_vec());
             ensure!((features.len()==0 || features.len()>=32),Error::<T>::FeaturesIpfsAddressisWrong);
@@ -674,6 +695,7 @@ decl_module! {
                     }
                     let cv=vecu8_to_u32(c);
                     ensure!(ProductColors::contains_key(&cv), Error::<T>::ColorNotFound);
+                    x=x+1;
                 }
             }
             // check size if enabled
@@ -687,10 +709,93 @@ decl_module! {
                     }
                     let szv=vecu8_to_u32(sz);
                     ensure!(ProductSizes::contains_key(&szv), Error::<T>::ColorNotFound);
+                    x=x+1;
                 }
             }
-
-        
+            // check dimension (optional)
+            let dimension=json_get_complexarray(configuration.clone(),"dimension".as_bytes().to_vec());
+            if dimension.len()>0 {
+                x=0;
+                loop {
+                    let jr=json_get_recordvalue(dimension.clone(),x);
+                    if jr.len()==0 {
+                        break;
+                    }
+                    // check for length
+                    let l=json_get_value(jr.clone(),"length".as_bytes().to_vec());
+                    let v=vecu8_to_u32(l);
+                    ensure!(v>0, Error::<T>::DimensionWrongLength);
+                    // check for wide
+                    let w=json_get_value(jr.clone(),"wide".as_bytes().to_vec());
+                    let v=vecu8_to_u32(w);
+                    ensure!(v>0, Error::<T>::DimensionWrongWide);
+                    // check for height
+                    let h=json_get_value(jr.clone(),"height".as_bytes().to_vec());
+                    let v=vecu8_to_u32(h);
+                    ensure!(v>0, Error::<T>::DimensionWrongHeight);
+                    // check for Weight
+                    let w=json_get_value(jr.clone(),"weight".as_bytes().to_vec());
+                    let v=vecu8_to_u32(w);
+                    ensure!(v>0, Error::<T>::DimensionWrongWeight);
+                    x=x+1;
+                }
+            }
+            // check UPC code (TODO - UPC check CRC validity)
+            let u=json_get_value(configuration.clone(),"upc".as_bytes().to_vec());
+            ensure!(u.len()>7, Error::<T>::UniversalProductCodeIsWrong);
+            // check for shipping countries (optional)
+            let shippingcountries=json_get_complexarray(configuration.clone(),"shippingcountries".as_bytes().to_vec());
+            if shippingcountries.len()>0 {
+                x=0;
+                loop {
+                    let countrycode=json_get_arrayvalue(shippingcountries.clone(),x);
+                    if countrycode.len()==0 {
+                        break;
+                    }
+                    ensure!(!IsoCountries::contains_key(&countrycode), Error::<T>::CountryCodeNotFound);
+                    x=x+1;
+                }
+            }
+            // check for shipping area
+            // TODO (check for GPS coordinates validity)
+            let shippingarea=json_get_complexarray(configuration.clone(),"shippingarea".as_bytes().to_vec());
+            if shippingarea.len()>0 {
+                x=0;
+                loop {
+                    let centerlatitude=json_get_value(shippingarea.clone(),"centerlatitude".as_bytes().to_vec());
+                    let centerlongitude=json_get_value(shippingarea.clone(),"centerlongitude".as_bytes().to_vec());
+                    let borderlatitude=json_get_value(shippingarea.clone(),"borderlatitude".as_bytes().to_vec());
+                    let borderlongitude=json_get_value(shippingarea.clone(),"borderlongitude".as_bytes().to_vec());
+                    ensure!(!centerlatitude.len()>0, Error::<T>::CenterLatitudeIsMissing);
+                    ensure!(!centerlongitude.len()>0, Error::<T>::CenterLongitudeIsMissing);
+                    ensure!(!borderlatitude.len()>0, Error::<T>::BorderLatitudeIsMissing);
+                    ensure!(!borderlongitude.len()>0, Error::<T>::BorderLongitudeIsMissing);
+                    x=x+1;
+                }
+            }
+            // check for the shippers (optional field)
+            let shippers=json_get_value(configuration.clone(),"shippers".as_bytes().to_vec());
+            if shippers.len()>0 {
+                x=0;
+                loop {
+                    let shipper=json_get_arrayvalue(shippers.clone(),x);
+                    let v=vecu8_to_u32(shipper);
+                    ensure!(Shippers::contains_key(&v), Error::<T>::ShipperNotFound);
+                    x=x+1;
+                }
+            }
+            // check for the API (optional field)
+            let apiavailability=json_get_value(configuration.clone(),"apiavailability".as_bytes().to_vec());
+            if apiavailability.len()>0 {
+                ensure!(aisland_validate_weburl(apiavailability),Error::<T>::InvalidApiUrl);
+            }
+            // TODO check the products was created from the same signer
+            if Products::contains_key(&uid) {
+                Products::take(&uid);
+            }
+            Products::insert(&uid,configuration.clone());
+             // Generate event
+             Self::deposit_event(RawEvent::MarketPlaceProductUpdated(uid,configuration));
             // Return a successful DispatchResult
             Ok(())
         }
