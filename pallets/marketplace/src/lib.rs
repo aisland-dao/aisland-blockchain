@@ -50,6 +50,8 @@ decl_storage! {
         Brands get(fn get_brand): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Product Models
         ProductModels get(fn get_product_model): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Shipping Companies
+        Shippers get(fn get_shipper): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
     }
 }
 
@@ -81,6 +83,8 @@ decl_event!(
         MarketPlaceBrandDestroyed(u32),                     // A brand has been removed
         MarketPlaceProductModelCreated(u32,Vec<u8>),        // a new product model has been created
         MarketPlaceProductModelDestroyed(u32),              // a product model has been removed
+        MarketPlaceShipperCreated(u32,Vec<u8>),             // A new shipper has been created
+        MarketPlaceShipperDestroyed(u32),                   // A shipper has been removed
     }
 );
 
@@ -285,6 +289,26 @@ decl_error! {
         ModelAlreadyPresent,
         /// Model has not been found
         ModelNotfound,
+        /// Shipper Id cannot be zero/empty
+        ShipperUidCannotBeZero,
+        /// Shipper name must be longer than 3 bytes
+        ShipperNameIsTooShort,
+        /// Shipper name cannot be longer than 64 bytes
+        ShipperNameIsTooLong,
+        /// Shipper website must be longer than 4 bytes
+        ShipperWebsiteIsTooShort,
+        /// Shipper website cannot be longer than 64 bytes
+        ShipperWebsiteIsTooLong,
+        /// Shipper is already present
+        ShipperAlreadyPresent,
+        /// Country of origin is not present on chain
+        OriginCountryNotPresent,
+        /// Destination country is not present on chain
+        DestinationCountryNotPresent,
+        /// Json field is too long
+        JsonIsTooLong,
+        /// Shipper has not been found
+        ShipperNotFound,
     }
 }
 
@@ -902,6 +926,75 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
+        /// Create a new Shipper
+        #[weight = 1000]
+        pub fn create_shipper(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
+            // check the request is signed from root
+            let _sender = ensure_root(origin)?;
+            // check uid >0
+            ensure!(uid > 0, Error::<T>::ShipperUidCannotBeZero);
+            // check valid json
+            ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
+            // check for name field
+            let name=json_get_value(info.clone(),"name".as_bytes().to_vec());
+            ensure!(name.len()>=3,Error::<T>::ShipperNameIsTooShort);
+            ensure!(name.len()<=64,Error::<T>::ShipperNameIsTooLong);
+            // check for info field
+            ensure!(info.len()<=32768,Error::<T>::JsonIsTooLong);
+            // check for website field
+            let website=json_get_value(info.clone(),"website".as_bytes().to_vec());
+            ensure!(website.len()>=4,Error::<T>::ShipperWebsiteIsTooShort);
+            ensure!(website.len()<=64,Error::<T>::ShipperWebsiteIsTooLong);
+            // check the Shipper is not alreay present on chain
+            ensure!(!Shippers::contains_key(uid), Error::<T>::ShipperAlreadyPresent);
+            // check for origincountries field (optional)
+            let origincountries=json_get_complexarray(info.clone(),"origincountries".as_bytes().to_vec());
+            if origincountries.len()>0 {
+                let mut x=0;
+                loop {  
+                    let oc=json_get_arrayvalue(origincountries.clone(),x);
+                    if oc.len()==0 {
+                        break;
+                    }
+                    ensure!(IsoCountries::contains_key(oc),Error::<T>::OriginCountryNotPresent);
+                    x=x+1;
+                }
+            }
+            // check for destinationcountries field (optional)
+            let destinationcountries=json_get_complexarray(info.clone(),"destinationcountries".as_bytes().to_vec());
+            if destinationcountries.len()>0 {
+                let mut x=0;
+                loop {  
+                    let dc=json_get_arrayvalue(destinationcountries.clone(),x);
+                    if dc.len()==0 {
+                        break;
+                    }
+                    ensure!(IsoCountries::contains_key(dc),Error::<T>::DestinationCountryNotPresent);
+                    x=x+1;
+                }
+            }
+            // store the shippers
+            Shippers::insert(uid,info.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceShipperCreated(uid,info));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy a Shipper 
+        #[weight = 1000]
+        pub fn destroy_shipper(origin, uid: u32) -> dispatch::DispatchResult {
+            // check the request is signed from Super User
+            let _sender = ensure_root(origin)?;
+            // verify the shipper exists
+            ensure!(Shippers::contains_key(&uid), Error::<T>::ShipperNotFound);
+            // Remove shipper
+            Shippers::take(uid);
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceShipperDestroyed(uid));
+            // Return a successful DispatchResult
+            Ok(())
+        }
         /// Create a new Brand
         #[weight = 1000]
         pub fn create_brand(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
@@ -919,7 +1012,7 @@ decl_module! {
             let manufacturer=json_get_value(info.clone(),"manufacturer".as_bytes().to_vec());
             let mv=vecu8_to_u32(manufacturer);
             ensure!(mv>0,Error::<T>::ManufacturerNotFound);
-            // check the manufacturer is  present on chain
+            // check the Manufacturer is  present on chain
             ensure!(Manufacturers::contains_key(mv), Error::<T>::ManufacturerNotFound);
             // check the brand is not present on chain
             ensure!(!Brands::contains_key(uid), Error::<T>::BrandAlreadyPresent);
@@ -991,6 +1084,11 @@ decl_module! {
         
     }
 }
+
+
+//*************************************************************************************
+//*** functions blocks
+//*************************************************************************************
 // function to validate a json string for no/std. It does not allocate of memory
 fn json_check_validity(j:Vec<u8>) -> bool{	
     // minimum lenght of 2
