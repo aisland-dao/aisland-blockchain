@@ -348,6 +348,8 @@ decl_error! {
         BorderLongitudeIsMissing,
         /// Invalid Api Url, should be an https or http address
         InvalidApiUrl,
+        /// Language code is wrong
+        LanguageCodeIsWrong,
     }
 }
 
@@ -789,6 +791,11 @@ decl_module! {
             if apiavailability.len()>0 {
                 ensure!(aisland_validate_weburl(apiavailability),Error::<T>::InvalidApiUrl);
             }
+            // check for the language if any
+            let language=json_get_value(configuration.clone(),"language".as_bytes().to_vec());
+            if language.len()>0 {
+                ensure!(aisland_validate_languagecode(language),Error::<T>::LanguageCodeIsWrong);
+             }
             // TODO check the products was created from the same signer
             if Products::contains_key(&uid) {
                 Products::take(&uid);
