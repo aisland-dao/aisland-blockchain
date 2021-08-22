@@ -250,10 +250,9 @@ def create_tables():
                     `description` VARCHAR(128) NOT NULL,PRIMARY KEY (id))"
     try:
         print("Creating table mpproductdepartment...")
-
         cursor.execute(createmarketplace)
     except mysql.connector.Error as err:
-            if(err.msg!="Table 'mpproductdepartment' already exists"):
+            if(err.msg!="Table 'mpproductdepartments' already exists"):
                 print(err.msg)
     else:
         print("OK")
@@ -698,6 +697,27 @@ def marketplace_newdepartment(blocknumber,txhash,signer,currenttime,departmentid
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to Destroy Product Department
+def marketplace_destroydepartment(blocknumber,txhash,signer,currenttime,departmentid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Department")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Department: ",departmentid)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    deltx="delete from mpproductdepartments where departmentid=%s"
+    datatx=(departmentid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -708,6 +728,8 @@ def process_block(blocknumber):
     print("Block Hash: ",result['header']['hash'])
     print ("##########################")
     events=substrate.get_events(result['header']['hash'])
+    print(events)
+    print ("##########################")
     cnt=0    
     for extrinsic in result['extrinsics']:
         if extrinsic.address:
@@ -720,8 +742,12 @@ def process_block(blocknumber):
             signed_by_address
         ))
         # check for exstrinc success or not
-        if events[cnt].event.name=="ExtrinsicFailed":
-            print("Extrinsic has failed: ",events[cnt].event.name)
+        try:
+            error=events[cnt].params[0]['value'].get('Error')
+        except:
+            error=None
+        if events[cnt].event.name=="ExtrinsicFailed" or error!=None :
+            print("Extrinsic has failed")
             cnt=cnt+1
             continue
         else:
@@ -810,6 +836,11 @@ def process_block(blocknumber):
                 print("id: ",c['call_args'][0]['value'])
                 print("description: ",c['call_args'][1]['value'])
                 marketplace_newdepartment(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Department
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_department':
+                print("Market Place - Destroy Department")
+                print("id: ",c['call_args'][0]['value'])
+                marketplace_destroydepartment(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             
         # Loop through call params
         for param in extrinsic.params:
