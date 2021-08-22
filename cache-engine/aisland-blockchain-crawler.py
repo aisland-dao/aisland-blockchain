@@ -240,7 +240,24 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating mpproductdepartment table for market place
+    createmarketplace="CREATE TABLE `mpproductdepartments` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `departmentid` int(11) NOT NULL,\
+                    `description` VARCHAR(128) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpproductdepartment...")
 
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpproductdepartment' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #regular closing of database
     cursor.close()
     cnx.close()
 # function to syncronise the blockchain reading the old blocks if not yet loaded
@@ -659,6 +676,28 @@ def impactactions_destroycategory(blocknumber,txhash,signer,currenttime,idcatego
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Department
+def marketplace_newdepartment(blocknumber,txhash,signer,currenttime,departmentid,description):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Department")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Department: ",departmentid)
+    print("Description: ",description)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpproductdepartments set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,departmentid=%s,description=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,departmentid,description)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -681,7 +720,7 @@ def process_block(blocknumber):
             signed_by_address
         ))
         # check for exstrinc success or not
-        if events[cnt].event.name!="ExtrinsicSuccess":
+        if events[cnt].event.name=="ExtrinsicFailed":
             print("Extrinsic has failed: ",events[cnt].event.name)
             cnt=cnt+1
             continue
@@ -765,6 +804,12 @@ def process_block(blocknumber):
                 print("Impact Actions - Destroy Category")
                 print("id: ",c['call_args'][0]['value'])
                 impactactions_destroycategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Market Place Create New Department
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_department':
+                print("Market Place - Create New Department")
+                print("id: ",c['call_args'][0]['value'])
+                print("description: ",c['call_args'][1]['value'])
+                marketplace_newdepartment(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             
         # Loop through call params
         for param in extrinsic.params:

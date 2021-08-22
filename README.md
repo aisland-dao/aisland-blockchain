@@ -85,7 +85,7 @@ Please follow [this guide](doc/validator.md).
 
 ### How to get AISC for Testnet
 You can get 100 free AISC on Testnet using our free minter available at:  
-[https://testnet.aislandi.ai:8443](https://testnet.aisland.io:8443)  
+[https://testnet.aislandi.io:8443](https://testnet.aisland.io:8443)  
 
 
 ### Bugs Reporting
