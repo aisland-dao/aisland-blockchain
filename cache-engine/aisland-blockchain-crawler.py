@@ -240,7 +240,7 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
-    #creating mpproductdepartment table for market place
+    #creating mpproductdepartments table for market place
     createmarketplace="CREATE TABLE `mpproductdepartments` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
                     `blocknumber` INT(11) NOT NULL,\
                     `txhash` VARCHAR(66) NOT NULL,\
@@ -253,6 +253,23 @@ def create_tables():
         cursor.execute(createmarketplace)
     except mysql.connector.Error as err:
             if(err.msg!="Table 'mpproductdepartments' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpproductcategories table for market place
+    createmarketplace="CREATE TABLE `mpproductcategories` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `departmentid` int(11) NOT NULL,\
+                    `categoryid` int(11) NOT NULL,\
+                    `description` VARCHAR(128) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpproductcategories...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpproductcategories' already exists"):
                 print(err.msg)
     else:
         print("OK")
@@ -718,6 +735,49 @@ def marketplace_destroydepartment(blocknumber,txhash,signer,currenttime,departme
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Category
+def marketplace_newcategory(blocknumber,txhash,signer,currenttime,departmentid,categoryid,description):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Category")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Department: ",departmentid)
+    print("Id Category: ",categoryid)
+    print("Description: ",description)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpproductcategories set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,departmentid=%s,categoryid=%s,description=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,departmentid,categoryid,description)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Product Category
+def marketplace_destroycategory(blocknumber,txhash,signer,currenttime,departmentid,categoryid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Category")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Department: ",departmentid)
+    print("Id Category: ",categoryid)
+    cursor = cnx.cursor()
+    deltx="delete from mpproductcategories where departmentid=%s and categoryid=%s"
+    datatx=(departmentid,categoryid)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -841,7 +901,19 @@ def process_block(blocknumber):
                 print("Market Place - Destroy Department")
                 print("id: ",c['call_args'][0]['value'])
                 marketplace_destroydepartment(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
-            
+            # Market Place Create New Category
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_category':
+                print("Market Place - Create New Category")
+                print("id Department: ",c['call_args'][0]['value'])
+                print("id Category: ",c['call_args'][1]['value'])
+                print("description: ",c['call_args'][2]['value'])
+                marketplace_newcategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'],c['call_args'][2]['value'])
+            # Market Place Destroy Department
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_category':
+                print("Market Place - Destroy Category")
+                print("id Department: ",c['call_args'][0]['value'])
+                print("id Category: ",c['call_args'][1]['value'])
+                marketplace_destroycategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
         # Loop through call params
         for param in extrinsic.params:
             if param['type'] == 'Compact<Balance>':
