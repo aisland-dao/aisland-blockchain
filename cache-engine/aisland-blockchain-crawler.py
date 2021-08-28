@@ -369,6 +369,39 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating mpisocuntries table for the market place
+    createmarketplace="CREATE TABLE `mpisocountries` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `countryid` VARCHAR(8) NOT NULL,\
+                    `name` VARCHAR(1024) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpisocountries...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpisocountries' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpdialcodes table for the market place
+    creating mpdialcodes table for the market place
+    createmarketplace="CREATE TABLE `mpisocountries` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `countryid` VARCHAR(8) NOT NULL,\
+                    `dialcode` VARCHAR(1024) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpisocountries...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpisocountries' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #regular closing of database
     cursor.close()
     cnx.close()
@@ -1120,6 +1153,47 @@ def marketplace_destroycurrency(blocknumber,txhash,signer,currenttime,currencyid
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Country Code
+def marketplace_newcountry(blocknumber,txhash,signer,currenttime,countryid,name):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Country Code")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Country: ",countryid)
+    print("Name: ",name)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpisocountries set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,countryid=%s,name=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,countryid,name)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Currency
+def marketplace_destroycountry(blocknumber,txhash,signer,currenttime,countryid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Country Code")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Country: ",countryid)
+    cursor = cnx.cursor()
+    deltx="delete from mpisocountries where countryid=%s"
+    datatx=(countryid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -1322,6 +1396,17 @@ def process_block(blocknumber):
                 print("Market Place - Destroy Currency")
                 print("Currency id: ",c['call_args'][0]['value'])
                 marketplace_destroycurrency(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Market Place Create New Country Code
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_iso_country':
+                print("Market Place - Create New Country Code")
+                print("id Country: ",c['call_args'][0]['value'])
+                print("Name: ",c['call_args'][1]['value'])
+                marketplace_newcountry(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Country code
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_iso_country':
+                print("Market Place - Destroy Country")
+                print("Country id: ",c['call_args'][0]['value'])
+                marketplace_destroycountry(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
         # Loop through call params
         for param in extrinsic.params:
             if param['type'] == 'Compact<Balance>':
