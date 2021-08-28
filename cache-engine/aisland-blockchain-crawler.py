@@ -305,6 +305,22 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating mpmanufacturers table for the market place
+    createmarketplace="CREATE TABLE `mpmanufacturers` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `manufacturerid` int(11) NOT NULL,\
+                    `info` VARCHAR(8192) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpmanufacturers...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpmanufacturers' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #regular closing of database
     cursor.close()
     cnx.close()
@@ -851,7 +867,7 @@ def marketplace_destroycolor(blocknumber,txhash,signer,currenttime,colorid):
     cnx.commit()
     cursor.close()
     cnx.close()
-# function to store Market Place - New Color
+# function to store Market Place - New Size
 def marketplace_newsize(blocknumber,txhash,signer,currenttime,sizeid,info):
     cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
     print("Market Place - Storing New Size")
@@ -873,7 +889,7 @@ def marketplace_newsize(blocknumber,txhash,signer,currenttime,sizeid,info):
     cnx.commit()
     cursor.close()
     cnx.close()
-# function to Destroy Product Category
+# function to Destroy Product Size
 def marketplace_destroysize(blocknumber,txhash,signer,currenttime,sizeid):
     cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
     print("Destroy Size")
@@ -892,6 +908,48 @@ def marketplace_destroysize(blocknumber,txhash,signer,currenttime,sizeid):
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Manufacturer
+def marketplace_newmanufacturer(blocknumber,txhash,signer,currenttime,manufacturerid,info):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Manufacturer")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Manufacturer: ",manufacturerid)
+    print("Info: ",info)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpmanufacturers set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,manufacturerid=%s,info=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,manufacturerid,info)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Product Manufacturer
+def marketplace_destroymanufacturer(blocknumber,txhash,signer,currenttime,manufacturerid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Size")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Manufacturer: ",manufacturerid)
+    cursor = cnx.cursor()
+    deltx="delete from mpmanufacturers where manufacturerid=%s"
+    datatx=(manufacturerid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -1050,6 +1108,17 @@ def process_block(blocknumber):
                 print("Market Place - Destroy Size")
                 print("Colorid: ",c['call_args'][0]['value'])
                 marketplace_destroysize(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Market Place Create New Manufacturer
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_manufacturer':
+                print("Market Place - Create New Manufacturer")
+                print("id Manufacturer: ",c['call_args'][0]['value'])
+                print("Info: ",c['call_args'][1]['value'])
+                marketplace_newmanufacturer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Manufacturer
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_manufacturer':
+                print("Market Place - Destroy Manufacturer")
+                print("Manufacturer id: ",c['call_args'][0]['value'])
+                marketplace_destroymanufacturer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
         # Loop through call params
         for param in extrinsic.params:
             if param['type'] == 'Compact<Balance>':
