@@ -321,6 +321,22 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating mpbrands table for the market place
+    createmarketplace="CREATE TABLE `mpbrands` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `brandid` int(11) NOT NULL,\
+                    `info` VARCHAR(1024) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpbrands...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpbrands' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #regular closing of database
     cursor.close()
     cnx.close()
@@ -949,6 +965,47 @@ def marketplace_destroymanufacturer(blocknumber,txhash,signer,currenttime,manufa
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Brand
+def marketplace_newbrand(blocknumber,txhash,signer,currenttime,brandid,info):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Brand")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Brand: ",brandid)
+    print("Info: ",info)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpbrands set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,brandid=%s,info=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,brandid,info)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Product Brand
+def marketplace_destroybrand(blocknumber,txhash,signer,currenttime,brandid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Size")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Brand: ",brandid)
+    cursor = cnx.cursor()
+    deltx="delete from mpbrands where brandid=%s"
+    datatx=(brandid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 
 # function to process a block of data
 def process_block(blocknumber):
@@ -1119,6 +1176,17 @@ def process_block(blocknumber):
                 print("Market Place - Destroy Manufacturer")
                 print("Manufacturer id: ",c['call_args'][0]['value'])
                 marketplace_destroymanufacturer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Market Place Create New Brand
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_brand':
+                print("Market Place - Create New Brand")
+                print("id Brand: ",c['call_args'][0]['value'])
+                print("Info: ",c['call_args'][1]['value'])
+                marketplace_newbrand(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Brand
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_brand':
+                print("Market Place - Destroy Brand")
+                print("Brand id: ",c['call_args'][0]['value'])
+                marketplace_destroybrand(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
         # Loop through call params
         for param in extrinsic.params:
             if param['type'] == 'Compact<Balance>':
