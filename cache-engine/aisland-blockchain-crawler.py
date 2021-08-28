@@ -273,6 +273,38 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating mpproductcolors table for the market place
+    createmarketplace="CREATE TABLE `mpproductcolors` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `colorid` int(11) NOT NULL,\
+                    `description` VARCHAR(128) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpproductcolors...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpproductcolors' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpproductsizes table for the market place
+    createmarketplace="CREATE TABLE `mpproductsizes` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `sizeid` int(11) NOT NULL,\
+                    `info` VARCHAR(8192) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpproductsizes...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpproductsizes' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #regular closing of database
     cursor.close()
     cnx.close()
@@ -778,6 +810,88 @@ def marketplace_destroycategory(blocknumber,txhash,signer,currenttime,department
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Color
+def marketplace_newcolor(blocknumber,txhash,signer,currenttime,colorid,description):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Color")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Color: ",colorid)
+    print("Description: ",description)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpproductcolors set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,colorid=%s,description=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,colorid,description)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Product Category
+def marketplace_destroycolor(blocknumber,txhash,signer,currenttime,colorid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Color")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Color: ",colorid)
+    cursor = cnx.cursor()
+    deltx="delete from mpproductcolors where colorid=%s"
+    datatx=(colorid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to store Market Place - New Color
+def marketplace_newsize(blocknumber,txhash,signer,currenttime,sizeid,info):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Size")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Size: ",sizeid)
+    print("Info: ",info)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpproductsizes set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,sizeid=%s,info=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,sizeid,info)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Product Category
+def marketplace_destroysize(blocknumber,txhash,signer,currenttime,sizeid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Size")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Size: ",sizeid)
+    cursor = cnx.cursor()
+    deltx="delete from mpproductsizes where sizeid=%s"
+    datatx=(sizeid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -906,14 +1020,36 @@ def process_block(blocknumber):
                 print("Market Place - Create New Category")
                 print("id Department: ",c['call_args'][0]['value'])
                 print("id Category: ",c['call_args'][1]['value'])
-                print("description: ",c['call_args'][2]['value'])
+                print("Description: ",c['call_args'][2]['value'])
                 marketplace_newcategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'],c['call_args'][2]['value'])
-            # Market Place Destroy Department
+            # Market Place Destroy Category
             if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_category':
                 print("Market Place - Destroy Category")
                 print("id Department: ",c['call_args'][0]['value'])
                 print("id Category: ",c['call_args'][1]['value'])
                 marketplace_destroycategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Create New Color
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_color':
+                print("Market Place - Create New Color")
+                print("id Color: ",c['call_args'][0]['value'])
+                print("Description: ",c['call_args'][1]['value'])
+                marketplace_newcolor(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Color
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_color':
+                print("Market Place - Destroy Color")
+                print("Colorid: ",c['call_args'][0]['value'])
+                marketplace_destroycolor(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Market Place Create New Size
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_size':
+                print("Market Place - Create New Size")
+                print("id Size: ",c['call_args'][0]['value'])
+                print("Info: ",c['call_args'][1]['value'])
+                marketplace_newsize(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Size
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_size':
+                print("Market Place - Destroy Size")
+                print("Colorid: ",c['call_args'][0]['value'])
+                marketplace_destroysize(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
         # Loop through call params
         for param in extrinsic.params:
             if param['type'] == 'Compact<Balance>':
