@@ -240,6 +240,25 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    # creating assets table for FT
+    createassets="CREATE TABLE `ftassets` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `assetid` int(11) NOT NULL,\
+                    `owner` VARCHAR(48) NOT NULL,\
+                    `maxzombies` int(11) NOT NULL,\
+                    `minbalance` int(11) NOT NULL,\
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table ftassets...")
+        cursor.execute(createassets)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'ftassets' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #creating mpproductdepartments table for market place
     createmarketplace="CREATE TABLE `mpproductdepartments` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
                     `blocknumber` INT(11) NOT NULL,\
@@ -853,6 +872,124 @@ def impactactions_destroycategory(blocknumber,txhash,signer,currenttime,idcatego
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to create new asset from Sudo
+def assets_force_create(blocknumber,txhash,signer,currenttime,assetid,owner,maxzombies,minbalance):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Create Asset (Fungible Tokens)")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Asset Id : ",assetid)
+    print("Owner : ",owner)
+    print("Max Zombies : ",maxzombies)
+    print("Min Balance : ",minbalance)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into ftassets set blocknumber=%s,txhash=%s,signer=%s,assetid=%s,owner=%s,maxzombies=%s,minbalance=%s,dtblockchain=%s"
+    datatx=(blocknumber,txhash,signer,assetid,owner,maxzombies,minbalance,dtblockchain)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+        print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to mint assets in favor of an account
+def assets_mint(blocknumber,txhash,signer,currenttime,assetid,recipient,amount):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    category="Minted"
+    print("Mint Assets (Fungible Tokens)")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Asset Id : ",assetid)
+    print("Recipient : ",recipient)
+    print("Amount : ",amount)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into fttransactions set blocknumber=%s,txhash=%s,signer=%s,category=%s,assetid=%s,recipient=%s,amount=%s,dtblockchain=%s"
+    datatx=(blocknumber,txhash,signer,category,assetid,recipient,amount,dtblockchain)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+        print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to burn assets decrease the balance of an account
+def assets_burn(blocknumber,txhash,signer,currenttime,assetid,recipient,amount):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    category="Burned"
+    print("Burn Assets (Fungible Tokens)")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Asset Id : ",assetid)
+    print("Recipient : ",recipient)
+    print("Amount : ",amount)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into fttransactions set blocknumber=%s,txhash=%s,signer=%s,category=%s,assetid=%s,recipient=%s,amount=%s,dtblockchain=%s"
+    datatx=(blocknumber,txhash,signer,category,assetid,recipient,amount,dtblockchain)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+        print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to transfer assets in favor of an account
+def assets_transfer(blocknumber,txhash,signer,currenttime,assetid,recipient,amount):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    category="Transfer"
+    print("Mint Assets (Fungible Tokens)")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Asset Id : ",assetid)
+    print("Recipient : ",recipient)
+    print("Amount : ",amount)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into fttransactions set blocknumber=%s,txhash=%s,signer=%s,category=%s,assetid=%s,recipient=%s,amount=%s,dtblockchain=%s"
+    datatx=(blocknumber,txhash,signer,category,assetid,recipient,amount,dtblockchain)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+        print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to destroy asset (Fungible Tokens) from Sudo
+def assets_force_destroy(blocknumber,txhash,signer,currenttime,assetid,witnesszombies):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Asset (Fungible Tokens)")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Asset Id: ",assetid)
+    print("Witnesses Zombies: ",witnesszombies)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    deltx="delete from ftassets where assetid=%s"
+    datatx=(assetid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+        print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to store Market Place - New Department
 def marketplace_newdepartment(blocknumber,txhash,signer,currenttime,departmentid,description):
     cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
@@ -1402,7 +1539,22 @@ def process_block(blocknumber):
             impactactions_assignauditorapprovalrequest(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value']) 
         #Impact Actions - Remove Assigned Auditor to Approval Request
         if extrinsic.call_module.name=="ImpactActions" and extrinsic.call.name=="destroy_assigned_auditor":
-            impactactions_destory_assignedauditorapprovalrequest(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'])            
+            impactactions_destory_assignedauditorapprovalrequest(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'])  
+        #Assets - Create new asset as regular user
+        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="create":
+            assets_force_create(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'],extrinsic.params[3]['value'])
+        #Assets - Destroy asset as regular user
+        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="destroy":
+            assets_force_destroy(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'])
+        #Assets - Mint assets in favor of an account
+        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="mint":
+            assets_mint(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'])
+        #Assets - Burn assets decreasing the balance of an account
+        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="burn":
+            assets_burn(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'])
+        #Assets - Transfer assets in favor of an account
+        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="transfer":
+            assets_transfer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'])        
         # Sudo -> Impact Actions 
         if extrinsic.call_module.name=="Sudo" and extrinsic.call.name=="sudo":
             print(extrinsic.params[0].get('value'))
@@ -1462,6 +1614,26 @@ def process_block(blocknumber):
                 print("Impact Actions - Destroy Category")
                 print("id: ",c['call_args'][0]['value'])
                 impactactions_destroycategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Force Create Asset
+            if c['call_module']== 'Assets' and c['call_function']=='force_create':
+                print("Fungibile Tokens - Create Asset")
+                print("id: ",c['call_args'][0]['value'])
+                print("Owner: ",c['call_args'][1]['value'])
+                print("Max Zombies: ",c['call_args'][2]['value'])
+                print("Minimum Deposit: ",c['call_args'][3]['value'])
+                assets_force_create(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'],c['call_args'][2]['value'],c['call_args'][3]['value'])
+            # Force transfer Assets
+            if c['call_module']== 'Assets' and c['call_function']=='force_transfer':
+                print("Fungible Tokens - Create Asset")
+                print("id: ",c['call_args'][0]['value'])
+                print("Witnesses Zombies: ",c['call_args'][1]['value'])
+                assets_transfer(blocknumber,'0x'+extrinsic.extrinsic_hash,c['call_args'][1]['value'],currentime,c['call_args'][0]['value'],c['call_args'][2]['value'],c['call_args'][2]['value'])
+            # Force Destroy Asset
+            if c['call_module']== 'Assets' and c['call_function']=='force_destroy':
+                print("Fungible Tokens - Create Asset")
+                print("id: ",c['call_args'][0]['value'])
+                print("Witnesses Zombies: ",c['call_args'][1]['value'])
+                assets_force_destroy(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Create New Department
             if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_department':
                 print("Market Place - Create New Department")
@@ -1592,7 +1764,7 @@ def process_block(blocknumber):
                 print("Info: ",c['call_args'][1]['value'])
                 marketplace_newshippingrates(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Shipping Rates
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_shipping_rates':
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_shipping_rate':
                 print("Market Place - Destroy Shipping Rates")
                 print("Shipper id: ",c['call_args'][0]['value'])
                 marketplace_destroyshippingrates(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
