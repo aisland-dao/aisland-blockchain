@@ -874,8 +874,9 @@ decl_module! {
              Ok(())
          }
          /// Create a new Currency code with name and other info in a json structure
-         /// {"name":"Bitcoin","category":"c(rypto)/f(iat)","countrycode":"countryisocode","blockchain":"Ethereum(...)","address":"xxxfor_crypto_currencyxxx"}
-         /// for example: {"name":"Bitcoin","category":"c","countrycode":"WW","blockchain":"Bitcoin","address":"not applicable"}
+         /// {"name":"Bitcoin","category":"c(rypto)/f(iat)","country":"countryisocode","blockchain":"Ethereum(...)","address":"xxxfor_crypto_currencyxxx"}
+         /// for example: {"name":"Bitcoin","category":"c","country":"AE","blockchain":"Bitcoin","address":"not applicable"}
+         /// {"name":"American Dollars","category":"f","country":"US","blockchain":"not applicable","address":"not applicable"}
         #[weight = 1000]
         pub fn create_currency(origin, currencycode: Vec<u8>, info: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed from the Super User
@@ -1060,6 +1061,7 @@ decl_module! {
             Ok(())
         }
         /// Create a new Shipper
+        /// exmaple info field: {"name":"DHL","website":"www.dhl.com"}
         #[weight = 1000]
         pub fn create_shipper(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
             // check the request is signed from root
@@ -1068,6 +1070,7 @@ decl_module! {
             ensure!(uid > 0, Error::<T>::ShipperUidCannotBeZero);
             // check valid json
             ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
+            ensure!(info.len()<=16384,Error::<T>::InvalidJson);
             // check for name field
             let name=json_get_value(info.clone(),"name".as_bytes().to_vec());
             ensure!(name.len()>=3,Error::<T>::ShipperNameIsTooShort);
@@ -1129,6 +1132,7 @@ decl_module! {
             Ok(())
         }
           /// Create new Shipping Rates
+          /// example field info: {"shipperid":1,"origincountry":"AE","currency":"AED","rates":[{"destination":"LR","fromkg":0,"to":1,"rate":10},{"destination":"LR","fromkg":1,"tokg":2,"rate":15}]}
           #[weight = 1000]
           pub fn create_shipping_rates(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
             // check the request is signed from root
@@ -1175,7 +1179,7 @@ decl_module! {
                     x=x+1;
                 }
             }
-            // store the shpping rates
+            // store the shipping rates
             ShippingRates::insert(uid,info.clone());
             // Generate event
             Self::deposit_event(RawEvent::MarketShippingRateCreated(uid,info));
@@ -1184,7 +1188,7 @@ decl_module! {
           }
           /// Destroy Shipping Rates 
           #[weight = 1000]
-          pub fn destroy_shipping_rate(origin, uid: u32) -> dispatch::DispatchResult {
+          pub fn destroy_shipping_rates(origin, uid: u32) -> dispatch::DispatchResult {
               // check the request is signed from Super User
               let _sender = ensure_root(origin)?;
               // verify the shipping rate exists
