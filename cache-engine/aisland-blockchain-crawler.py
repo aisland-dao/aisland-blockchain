@@ -353,6 +353,22 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating mpcurrencies table for the market place
+    createmarketplace="CREATE TABLE `mpcurrencies` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `currencyid` VARCHAR(8) NOT NULL,\
+                    `info` VARCHAR(1024) NOT NULL,PRIMARY KEY (id))"
+    try:
+        print("Creating table mpcurrencies...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpcurrencies' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #regular closing of database
     cursor.close()
     cnx.close()
@@ -1063,6 +1079,47 @@ def marketplace_destroymodel(blocknumber,txhash,signer,currenttime,modelid):
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New currency
+def marketplace_newcurrency(blocknumber,txhash,signer,currenttime,currencyid,info):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Currency")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Currency: ",currencyid)
+    print("Info: ",info)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpcurrencies set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,currencyid=%s,info=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,currencyid,info)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Currency
+def marketplace_destroycurrency(blocknumber,txhash,signer,currenttime,currencyid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Currency")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Currency: ",currencyid)
+    cursor = cnx.cursor()
+    deltx="delete from mpcurrencies where currencyid=%s"
+    datatx=(currencyid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -1254,6 +1311,17 @@ def process_block(blocknumber):
                 print("Market Place - Destroy Model")
                 print("Model id: ",c['call_args'][0]['value'])
                 marketplace_destroymodel(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Market Place Create New Currency
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_currency':
+                print("Market Place - Create New Currency")
+                print("id Currency: ",c['call_args'][0]['value'])
+                print("Info: ",c['call_args'][1]['value'])
+                marketplace_newcurrency(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Currency
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_currency':
+                print("Market Place - Destroy Currency")
+                print("Currency id: ",c['call_args'][0]['value'])
+                marketplace_destroycurrency(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
         # Loop through call params
         for param in extrinsic.params:
             if param['type'] == 'Compact<Balance>':
