@@ -386,8 +386,7 @@ def create_tables():
     else:
         print("OK")
     #creating mpdialcodes table for the market place
-    creating mpdialcodes table for the market place
-    createmarketplace="CREATE TABLE `mpisocountries` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+    createmarketplace="CREATE TABLE `mpdialcodes` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
                     `blocknumber` INT(11) NOT NULL,\
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
@@ -395,10 +394,10 @@ def create_tables():
                     `countryid` VARCHAR(8) NOT NULL,\
                     `dialcode` VARCHAR(1024) NOT NULL,PRIMARY KEY (id))"
     try:
-        print("Creating table mpisocountries...")
+        print("Creating table mpdialcodes...")
         cursor.execute(createmarketplace)
     except mysql.connector.Error as err:
-            if(err.msg!="Table 'mpisocountries' already exists"):
+            if(err.msg!="Table 'mpdialcodes' already exists"):
                 print(err.msg)
     else:
         print("OK")
@@ -1194,6 +1193,47 @@ def marketplace_destroycountry(blocknumber,txhash,signer,currenttime,countryid):
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Dial Code
+def marketplace_newdialcode(blocknumber,txhash,signer,currenttime,countryid,dialcode):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Dial Code")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Country: ",countryid)
+    print("Dial Code: ",dialcode)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpdialcodes set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,countryid=%s,dialcode=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,countryid,dialcode)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Dial Code
+def marketplace_destroydialcode(blocknumber,txhash,signer,currenttime,countryid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Dial Code")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Country: ",countryid)
+    cursor = cnx.cursor()
+    deltx="delete from mpdialcodes where countryid=%s"
+    datatx=(countryid,)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
@@ -1407,6 +1447,17 @@ def process_block(blocknumber):
                 print("Market Place - Destroy Country")
                 print("Country id: ",c['call_args'][0]['value'])
                 marketplace_destroycountry(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+            # Market Place Create New Dial Code
+            if c['call_module']== 'MarketPlace' and c['call_function']=='create_dialcode_country':
+                print("Market Place - Create New Dial Code")
+                print("id Country: ",c['call_args'][0]['value'])
+                print("Dial Code: ",c['call_args'][1]['value'])
+                marketplace_newdialcode(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+            # Market Place Destroy Dial code
+            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_dialcode_country':
+                print("Market Place - Destroy Dial code")
+                print("Country id: ",c['call_args'][0]['value'])
+                marketplace_destroydialcode(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
         # Loop through call params
         for param in extrinsic.params:
             if param['type'] == 'Compact<Balance>':
