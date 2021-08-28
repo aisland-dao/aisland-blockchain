@@ -875,14 +875,17 @@ decl_module! {
          }
          /// Create a new Currency code with name and other info in a json structure
          /// {"name":"Bitcoin","category":"c(rypto)/f(iat)","countrycode":"countryisocode","blockchain":"Ethereum(...)","address":"xxxfor_crypto_currencyxxx"}
+         /// for example: {"name":"Bitcoin","category":"c","countrycode":"WW","blockchain":"Bitcoin","address":"not applicable"}
         #[weight = 1000]
         pub fn create_currency(origin, currencycode: Vec<u8>, info: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed from the Super User
             let _sender = ensure_root(origin)?;
             // check currency code length is between 3 and 5 bytes
             ensure!((currencycode.len()>=3 && currencycode.len()<=5), Error::<T>::WrongLengthCurrencyCode);
+            // check the info field is not longer 1024 bytes
+            ensure!((info.len()<=1024), Error::<T>::SizeInfoTooLong);
             // check for a valid json structure
-            ensure!(json_check_validity(currencycode.clone()),Error::<T>::InvalidJson);
+            ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
             // check for name
             let name=json_get_value(info.clone(),"name".as_bytes().to_vec());
             ensure!(name.len()>=3, Error::<T>::CurrencyNameTooShort);
@@ -964,6 +967,7 @@ decl_module! {
             Ok(())
         }
         /// Create a new product Size
+        /// example json in info field: {"code":"XL","description":"Extra Large","area":"Europe"}
         #[weight = 1000]
         pub fn create_product_size(origin, uid: u32, info: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed from root
@@ -1014,6 +1018,7 @@ decl_module! {
             Ok(())
         }
         /// Create a new Manufacturer
+        /// Example field info: {"name":"Samsung","website":"https://www.samsung.com"}
         #[weight = 1000]
         pub fn create_manufacturer(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
             // check the request is signed from root
@@ -1193,12 +1198,14 @@ decl_module! {
               Ok(())
           }
         /// Create a new Brand
+        /// Example of info field: {"name":"Galaxy","manufacturer":7}
         #[weight = 1000]
         pub fn create_brand(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
             // check the request is signed from root
             let _sender = ensure_root(origin)?;
             // check uid >0
             ensure!(uid > 0, Error::<T>::BrandUidCannotBeZero);
+            ensure!(info.len()<=1024,Error::<T>::JsonIsTooLong);
             // check valid json
             ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
             // check for name field
@@ -1236,6 +1243,7 @@ decl_module! {
             Ok(())
         }
          /// Create a new product model
+         /// Example field info: {"name":"A1","brand":1}
          #[weight = 1000]
          pub fn create_product_model(origin, uid: u32, info: Vec<u8>,) -> dispatch::DispatchResult {
              // check the request is signed from root
@@ -1246,12 +1254,12 @@ decl_module! {
              ensure!(json_check_validity(info.clone()),Error::<T>::InvalidJson);
              // check for name field
              let name=json_get_value(info.clone(),"name".as_bytes().to_vec());
-             ensure!(name.len()>=3,Error::<T>::ModelNameIsTooShort);
+             ensure!(name.len()>=2,Error::<T>::ModelNameIsTooShort);
              ensure!(name.len()<=32,Error::<T>::ModelNameIsTooLong);
              // check for brand field
              let brand=json_get_value(info.clone(),"brand".as_bytes().to_vec());
              let bv=vecu8_to_u32(brand);
-             ensure!(bv>0,Error::<T>::ManufacturerNotFound);
+             ensure!(bv>0,Error::<T>::BrandNotFound);
              // check the brand is  present on chain
              ensure!(Brands::contains_key(bv), Error::<T>::BrandNotFound);
              // check the model is not present on chain
