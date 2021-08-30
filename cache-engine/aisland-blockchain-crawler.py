@@ -259,6 +259,26 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    # creating transaction for fungible tokens
+    createassets="CREATE TABLE `fttransactions` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `sender` VARCHAR(48) NOT NULL,\
+                    `category` VARCHAR(20) NOT NULL,\
+                    `assetid` int(11) NOT NULL,\
+                    `recipient` VARCHAR(48) NOT NULL,\
+                    `amount` int(11) NOT NULL,\
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table fttransactions...")
+        cursor.execute(createassets)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'fttransactions' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #creating mpproductdepartments table for market place
     createmarketplace="CREATE TABLE `mpproductdepartments` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
                     `blocknumber` INT(11) NOT NULL,\
@@ -968,6 +988,30 @@ def assets_transfer(blocknumber,txhash,signer,currenttime,assetid,recipient,amou
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to force transfer assets in favor of an account
+def assets_forcetransfer(blocknumber,txhash,signer,sender,currenttime,assetid,recipient,amount):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    category="Transfer"
+    print("Mint Assets (Fungible Tokens)")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Asset Id : ",assetid)
+    print("Recipient : ",recipient)
+    print("Amount : ",amount)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into fttransactions set blocknumber=%s,txhash=%s,signer=%s,sender=%s,category=%s,assetid=%s,recipient=%s,amount=%s,dtblockchain=%s"
+    datatx=(blocknumber,txhash,signer,signer,category,assetid,recipient,amount,dtblockchain)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+        print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to destroy asset (Fungible Tokens) from Sudo
 def assets_force_destroy(blocknumber,txhash,signer,currenttime,assetid,witnesszombies):
     cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
@@ -1624,10 +1668,10 @@ def process_block(blocknumber):
                 assets_force_create(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'],c['call_args'][2]['value'],c['call_args'][3]['value'])
             # Force transfer Assets
             if c['call_module']== 'Assets' and c['call_function']=='force_transfer':
-                print("Fungible Tokens - Create Asset")
+                print("Fungible Tokens - Force Transfer")
                 print("id: ",c['call_args'][0]['value'])
                 print("Witnesses Zombies: ",c['call_args'][1]['value'])
-                assets_transfer(blocknumber,'0x'+extrinsic.extrinsic_hash,c['call_args'][1]['value'],currentime,c['call_args'][0]['value'],c['call_args'][2]['value'],c['call_args'][2]['value'])
+                assets_forcetransfer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,c['call_args'][1]['value'],currentime,c['call_args'][0]['value'],c['call_args'][2]['value'],c['call_args'][3]['value'])
             # Force Destroy Asset
             if c['call_module']== 'Assets' and c['call_function']=='force_destroy':
                 print("Fungible Tokens - Create Asset")
