@@ -8,7 +8,7 @@ split-debuginfo = "unpacked"
 members = [
     'node',
     'modules/*',
-    'pallets/*',
+    
     'runtime',
     'primitives'
 ]

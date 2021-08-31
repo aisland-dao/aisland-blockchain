@@ -507,17 +507,8 @@ def sync_blockchain(substrate):
     while x<=lastblocknumber:
         # get block data
         print("Syncing block # ",x)
-        result = substrate.get_block(block_number=x)
-        for extrinsic in result['extrinsics']:
-            if extrinsic.address:
-                signed_by_address = extrinsic.address.value
-            else:
-                signed_by_address = None
-            if extrinsic.call_module.name=="Timestamp" and extrinsic.call.name=="set":
-                currentime=extrinsic.params[0]['value']
-            if extrinsic.call_module.name=="Balances" and ( extrinsic.call.name=="transfer" or extrinsic.call.name=="transfer_keep_alive"):
-                ## store the transaction in the database
-                store_transaction(x,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,extrinsic.params[0]['value'],extrinsic.params[1]['value'],currentime)
+        # process the block of data
+        process_block(x)
         # update sync
         sqlst=""
         if(lastblocknumberverified==0):
