@@ -197,70 +197,70 @@ pub fn public_testnet_config() -> Result<ChainSpec, String> {
                 // authority-discovery
                 vec![
                     (
-                        // Boot Node/Validator 1: ip address 95.217.2.2
-                        hex!["0a8e3c33501c0001bb08efc7511ca0b81f700eb8010ec91dc2d9324b3e0d2860"]
+                        // Boot Node/Validator 1: ip address 65.108.62.72 (public keys in hex)
+                        hex!["28a1072ad74a525b78d207aeeb6faf16518e02936e8e9c47b74eb50485cc6e0b"]
                             .into(),
-                        hex!["fabe0e7010a320055f706192258876f3e97d237f836c8e1b753175df17d97b40"]
+                        hex!["dab8b1ec5c466daad27a5ea0306107f4eec88aada9f6c6c75afdacb1bf762374"]
                             .into(),
-                        hex!["a538f6fbd05fdcd42d91600eca9c7e6b7240fa82fc23b569deea91af6c97a5f1"]
+                        hex!["e46ce812ed7c40e446f1a92a6be46856428ee9f38152c833991c00c4314649c6"]
                             .unchecked_into(),
-                        hex!["a66bdf2c219a5fc728188edfeed3eb1ef17612d65764a71effcffd7f16a72834"]
+                        hex!["c0fa3655fabf021d4358c1206a07885420e938ac288047258f3e33f7aebb770b"]
                             .unchecked_into(),
-                        hex!["50341e1134ad1a2244caaba520c4fff3a44bcca58c68d2fb9fdf924180c6b67f"]
+                        hex!["a84d71be232e639172a7263716d4d2502618005b3e8ac6ec21e7bfd5606ff016"]
                             .unchecked_into(),
-                        hex!["7e4e3fd0a36ae866460c5e857682671a3c9f6a511d589084d400f3fe55672439"]
+                        hex!["0835dc13fbd5a581620a17a7517bd59e9d1ad63394b7e11d32b38df1a0bf742b"]
                             .unchecked_into(),
                     ),
                     (
-                        // Boot Node/Validator 2: ip addres 95.217.4.158
-                        hex!["c866ae8a5b961062016bda70138e00b84a2975c22b6f61d44d2004a4ef9c6116"]
+                        // Boot Node/Validator 2: ip addres 94.130.184.125 (public keys in hex)
+                        hex!["a6b1dcada564320266bba831f002f1e306d4919ea9ff4efe5ffcfa49304f5009"]
                             .into(),
-                        hex!["ca514d67c95446d8ee62020f22c0b70616b4d6112dfc2c6e5dcafd67e9c27d09"]
+                        hex!["70cf5306dcbbc988ea3d9a9ff0a19a22f123839233241636ebfbc7d15787b062"]
                             .into(),
-                        hex!["7ea36efa84a2e3e9416d94f4979aa9a6423d6a6dd2abb475e496cb571ee99dff"]
+                        hex!["4edf8af0a87ba1b06c9a1b2f77a1bf163cc2e0cfc54771125df4dd2b578ac1cb"]
                             .unchecked_into(),
-                        hex!["44c24fd0fc8cda7ba0c2613be44ef78782ee600eea05d4eb3af0a64f12056e6e"]
+                        hex!["12e7063e954499f1ebe9c09d42d34aac080e53a9ef8478ea6bdd44618d74d274"]
                             .unchecked_into(),
-                        hex!["768d7df7f1f8dfbef05c34fa11358a52106a71ada232fa2bd35cb15df86f1b58"]
+                        hex!["f254c663f6eff4be404f01c5a80c38210c08592d3f3c33771070fb2316d2aa12"]
                             .unchecked_into(),
-                        hex!["a2c666674fbf9a66df9ad15f1fa3bcea315990f7515c3dd2c26dcccc9d4bc27a"]
+                        hex!["d601e09399970bf8fd11fedd9fda45f60ee0d9f65a101f699021dbc132b95232"]
                             .unchecked_into(),
                     ),
                     (
-                        // Boot Node/Validator 3: ip addres 95.217.1.25
-                        hex!["42547f143cb05a47a8de112e9b8362dec1d586fa241f29f0e591e17815f1d71a"]
+                        // Boot Node/Validator 3: ip addres 94.130.183.49 (public keys in hex)
+                        hex!["9a26fcf27e4157aee6a6e59fd1586d3e83288d5eedd5929968ebc21ccf93a547"]
                             .into(),
-                        hex!["8e4ddd28c76a5963b7e81f73495afd663d9ed26ec66dfe8b8b7e3a8b4f01b330"]
+                        hex!["bc2763759855c9ca4bdc5e7b260036605462fd6ad1ffb0a5ea6ea2f8169d5464"]
                             .into(),
-                        hex!["b034fb357e174f6c7bf7588dba0e191a24ae4f0b63f4ee41e9fcd9b00fcc5ed0"]
+                        hex!["10dce40326ea7ee129dc7757515aa3695189df4ec34adda39fe51f636b49b41f"]
                             .unchecked_into(),
-                        hex!["a401838c6a5043cc3353517e7c4396090277b568100806fed7769fadc8baa35b"]
+                        hex!["9e8c7741d6ff30c8f6e2637ca89a9a0503170f8cda39f4e763c4c9a3d3f43538"]
                             .unchecked_into(),
-                        hex!["6acdf720031ddf5d4c7cb06ee7876eef77688956575f5c0480df40b059804a38"]
+                        hex!["7ae5fc6382ba2c27a9719ca0e541d210312865db1cfafe48a860f92ff76c0247"]
                             .unchecked_into(),
-                        hex!["bc2efdfdccb4c371eebd9fc1d9d86a6a2eaf516878a5989b0ddcd4f09101f606"]
+                        hex!["1ef2ee8131b7279d0da66f5d7348e00acb29bcb7d01e80015164ab69408b4b69"]
                             .unchecked_into(),
                     ),
                 ],
                 // Sudo
-                hex!["caca29e30cce36df2263139cb15dd0e3ecbeb053d37aeac7ac8d2291ff7afa5c"].into(),
+                hex!["1457e343391f4e1c2644a378506d49e1ff1a59d6a854c0f99d20f9c4b74d383c"].into(),
                 // Endowed accounts
                 vec![
-                    hex!["caca29e30cce36df2263139cb15dd0e3ecbeb053d37aeac7ac8d2291ff7afa5c"].into(),
-                    hex!["4e5758a750dad72ea2e777a16222765b5b713c9eeda2eb8cd3f3b989203c5008"].into(),
-                    hex!["ccf2f08394dde73dd5bd1946552e2042d1f502cb50eb7c29061873f5831caf42"].into(),
+                    hex!["deeadc65c04777f95e8a6724da400834f3026bafb82f22fb8d3edc844d35ac6e"].into(),
+                    hex!["12f3f0becb6d631913013a154b1f24ad474b12631959115ad66cf515904f762a"].into(),
+                    hex!["70ca6312898f76dab454bd15074cd858b43448fea6e8881476e2c138305c151b"].into(),
                 ],
             )
         },
         // Bootnodes
         vec![
-            "/ip4/95.217.2.2/tcp/30333/p2p/12D3KooWQrG8VAfYs8nXv95XJDu9Yo1iKKQ2KZRJkBVtfxpLvoYe"
+            "/ip4/65.108.62.72/tcp/30333/p2p/12D3KooWPu79TFZHuZYU78mi72C1e8Dk37ot69Um8atNNiz9Hm2R"
                 .parse()
                 .unwrap(),
-            "/ip4/95.217.4.158/tcp/30333/p2p/12D3KooWCAdsB5VvsQ7eCWPZZ4eCdYbriFVwEJnvE5B9YAmRNTuY"
+            "/ip4/94.130.184.125/tcp/30333/p2p/12D3KooWSZVBZtM1fetf2wCLSvRCLmYhisYFMJrqQn4eZdW1RFNi"
                 .parse()
                 .unwrap(),
-            "/ip4/95.217.1.25/tcp/30333/p2p/12D3KooWCRjP5nofPVvE5d7yj7wktKBPKwWxzc4oNd78z63nNvJC"
+            "/ip4/94.130.183.49/tcp/30333/p2p/12D3KooWSecRjwjJ6CFJLtCNacEzWBV2S46vrHD1DcC491fz13Ut"
                 .parse()
                 .unwrap(),
         ],
