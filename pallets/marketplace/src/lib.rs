@@ -56,6 +56,8 @@ decl_storage! {
         Shippers get(fn get_shipper): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Shipping Companies
         ShippingRates get(fn get_shipper_rate): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
+        // Login data: email and password hashes. The password is hashed with ARGON2 and then furher encrypted with 3 layers of symmetric encryption.
+        LoginData get(fn get_login_data): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
     }
 }
 
@@ -92,6 +94,8 @@ decl_event!(
         MarketShippingRateCreated(u32,Vec<u8>),             // A new shipping rate has been created
         MarketShippingRateDestroyed(u32),                   // A shipping rate has been removed
         MarketPlaceProductUpdated(u32,Vec<u8>),             // A product has been created or updated
+        MarketPlaceLoginDataCreated(Vec<u8>, Vec<u8>),      // A new login data has been created
+        MarketPlaceLoginDataDestroyed(Vec<u8>),             // A login data has been destroyed
     }
 );
 
@@ -350,6 +354,14 @@ decl_error! {
         InvalidApiUrl,
         /// Language code is wrong
         LanguageCodeIsWrong,
+        /// Wrong lenght for the Encrypted Email
+        WrongLengthEmailHash,
+        /// Wrong lenght for the Encrypted Password
+        WrongLengthEncryptedPassword,
+        /// Email hash is already present on chain
+        EmailHashAlreadyPresent,
+        // Email hash has not been found on chain
+        EmailHashNotFound,
     }
 }
 
@@ -639,7 +651,7 @@ decl_module! {
         #[weight = 10000]
         pub fn create_update_product(origin, uid: u32, configuration: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed
-            let sender = ensure_signed(origin)?;
+            let _sender = ensure_signed(origin)?;
             //check configuration length
             ensure!(configuration.len() > 12, Error::<T>::ConfigurationTooShort);
             ensure!(configuration.len() < 65536, Error::<T>::ConfigurationTooLong);
@@ -1290,6 +1302,39 @@ decl_module! {
              // Return a successful DispatchResult
              Ok(())
          }
+         /// Create a new Login Data
+        #[weight = 1000]
+        pub fn create_login_data(origin, emailhash: Vec<u8>, encryptedpwdhash: Vec<u8>) -> dispatch::DispatchResult {
+            // check the request is signed from the Super User
+            let _sender = ensure_signed(origin)?;
+            // check Email hash length
+            ensure!(emailhash.len()>8, Error::<T>::WrongLengthEmailHash);
+            // check Encrypted Password length
+            ensure!(encryptedpwdhash.len()>8, Error::<T>::WrongLengthEncryptedPassword);
+            // check the email ahsh is not alreay present on chain
+            ensure!(LoginData::contains_key(&emailhash)==false, Error::<T>::EmailHashAlreadyPresent);
+            // store the Login Data
+            LoginData::insert(emailhash.clone(),encryptedpwdhash.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceLoginDataCreated(emailhash,encryptedpwdhash));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+        /// Destroy an Iso country code and name
+        #[weight = 1000]
+        pub fn destroy_login_data(origin, emailhash: Vec<u8>,) -> dispatch::DispatchResult {
+            // check the request is signed from the same signer of the original writing
+            let _sender = ensure_signed(origin)?;
+            // verify the country code exists
+            ensure!(LoginData::contains_key(&emailhash)==true, Error::<T>::EmailHashNotFound);
+            // Remove email hash
+            LoginData::take(emailhash.clone());
+            // Generate event
+            //it can leave orphans, anyway it's a decision of the super user
+            Self::deposit_event(RawEvent::MarketPlaceLoginDataDestroyed(emailhash));
+            // Return a successful DispatchResult
+            Ok(())
+        }
         
     }
 }
