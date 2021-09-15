@@ -11,8 +11,8 @@ This programs is an https server where the user can require the transfer of 100 
 ```bash
 npm install express
 npm install readfile
-yarn add @polkadot/keyring
-yarn add @polkadot/api
+npm install @polkadot/keyring
+npm insall @polkadot/api
 ```
 ## Run the server:
 From the command line, execute:  

@@ -473,6 +473,42 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating moproducts table for the market place
+    createmarketplace="CREATE TABLE `mpproducts` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `productid` VARCHAR(32) NOT NULL,\
+                    `departmentid` INTEGER NOT NULL,\
+                    `categoryid` INTEGER NOT NULL,\
+                    `shortdescription` VARCHAR(64) NOT NULL,\
+                    `description` TEXT NOT NULL,\
+                    `specifications` TEXT NOT NULL,\
+                    `photos` TEXT,\
+                    `price` numeric(36,18) NOT NULL,\
+                    `currency` VARCHAR(4) NOT NULL,\
+                    `upcean` VARCHAR(13),\
+                    `brand` INTEGER,\
+                    `model` INTEGER,\
+                    `returnpolicy` INTEGER NOT NULL,\
+                    `guarantee` INTEGER NOT NULL,\
+                    `minquantity` INTEGER NOT NULL,\
+                    `packagesizel` NUMERIC(8,2) NOT NULL,\
+                    `packagesizeh` NUMERIC(8,2) NOT NULL,\
+                    `packagesizew` NUMERIC(8,2) NOT NULL,\
+                    `packageweight` NUMERIC(8,2) NOT NULL,\
+                    `documents` TEXT,\
+                    `info` TEXT NOT NULL,\
+                     PRIMARY KEY (id))"
+    try:
+        print("Creating table mpproducts...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpproducts' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #regular closing of database
     cursor.close()
     cnx.close()

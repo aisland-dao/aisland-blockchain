@@ -232,8 +232,8 @@ decl_error! {
         ProductLongDescriptionTooLong,
         /// Product price must be > zero
         ProductPriceCannotBeZero,
-        /// Features has a wrong IPFS address
-        FeaturesIpfsAddressisWrong,
+        /// Specification must be >0 and < 8192
+        SpecificationsIsdInvalid,
         /// Media files cannot be empty, high quality description is required.
         MediaCannotBeEmpty,
         /// Media Description is wrong, cannot be empty
@@ -664,7 +664,7 @@ decl_module! {
             // check for mandatory long description
             let longdescription=json_get_value(configuration.clone(),"longdescription".as_bytes().to_vec());
             ensure!(longdescription.len()>=64, Error::<T>::ProductLongDescriptionTooShort);
-            ensure!(longdescription.len()<=4096, Error::<T>::ProductLongDescriptionTooLong);
+            ensure!(longdescription.len()<=8192, Error::<T>::ProductLongDescriptionTooLong);
             // check for price >0
             let price=json_get_value(configuration.clone(),"price".as_bytes().to_vec());
             let pricevalue=vecu8_to_u128(price);
@@ -672,9 +672,9 @@ decl_module! {
             // check for mandatory currency code
             let currencycode=json_get_value(configuration.clone(),"currency".as_bytes().to_vec());
             ensure!(Currencies::contains_key(&currencycode), Error::<T>::CurrencyCodeNotFound);
-            // check for features
-            let features=json_get_value(configuration.clone(),"features".as_bytes().to_vec());
-            ensure!((features.len()==0 || features.len()>=32),Error::<T>::FeaturesIpfsAddressisWrong);
+            // check for specifications
+            let specifications=json_get_value(configuration.clone(),"specifications".as_bytes().to_vec());
+            ensure!((specifications.len()==0 || specifications.len()>=8192),Error::<T>::SpecificationsIsdInvalid);
             // Media is an array of photos,videos and document being part of the product documentation
             // the structure can be [{"description":"xxxxx","filename":"xxxxxxx"},"ipfs":"xxxxxxx",("color":xx)},{..}]
             let media=json_get_complexarray(configuration.clone(),"media".as_bytes().to_vec());
