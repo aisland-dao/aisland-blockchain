@@ -479,6 +479,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
                     `productid` VARCHAR(32) NOT NULL,\
                     `departmentid` INTEGER NOT NULL,\
                     `categoryid` INTEGER NOT NULL,\
@@ -486,6 +487,7 @@ def create_tables():
                     `description` TEXT NOT NULL,\
                     `specifications` TEXT NOT NULL,\
                     `photos` TEXT,\
+                    `videos` TEXT,\
                     `price` numeric(36,18) NOT NULL,\
                     `currency` VARCHAR(4) NOT NULL,\
                     `upcean` VARCHAR(13),\
@@ -493,7 +495,7 @@ def create_tables():
                     `model` INTEGER,\
                     `returnpolicy` INTEGER NOT NULL,\
                     `guarantee` INTEGER NOT NULL,\
-                    `minquantity` INTEGER NOT NULL,\
+                    `minimumquantity` INTEGER NOT NULL,\
                     `packagesizel` NUMERIC(8,2) NOT NULL,\
                     `packagesizeh` NUMERIC(8,2) NOT NULL,\
                     `packagesizew` NUMERIC(8,2) NOT NULL,\

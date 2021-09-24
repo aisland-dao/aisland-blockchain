@@ -872,6 +872,14 @@ impl orml_nft::Config for Runtime {
 }
 // end pallet orml-nft
 
+// Pallet Utility
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+}
+// End Pallet Utility
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 
 // workaround for a weird bug in macro
@@ -922,7 +930,7 @@ construct_runtime!(
 
         // Identity
         Identity: pallet_identity::{Module, Call, Storage, Event<T>} = 40,
-
+        
         // POC
         TechCouncil: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>} = 50,
         Poc: module_poc::{Module, Call, Storage, Event<T>} = 51,
@@ -934,9 +942,10 @@ construct_runtime!(
         Assets: pallet_assets::{Module, Call, Storage, Event<T>} = 71,
         //Impact Actions
         ImpactActions: pallet_impact_actions::{Module, Call, Storage, Event<T>} = 72,
+        // Utility pallet
+		Utility: pallet_utility::{Module, Call, Event} = 73,
         //Market Place
         MarketPlace: pallet_marketplace::{Module, Call, Storage, Event<T>} = 80,
-
     }
 );
 
