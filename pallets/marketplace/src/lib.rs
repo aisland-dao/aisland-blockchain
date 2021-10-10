@@ -4,7 +4,7 @@ use core::str;
 use core::str::FromStr;
 /// Module to manage the function for the MarketPlace
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, dispatch, ensure, traits::Currency,
+    decl_error, decl_event, decl_module, decl_storage, dispatch, ensure, traits::Currency,codec::Decode,
 };
 use frame_system::{ensure_root, ensure_signed};
 use sp_std::prelude::*;
@@ -44,7 +44,7 @@ decl_storage! {
         IsoCountries get(fn get_iso_country): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Standard Iso dial code for country code
         IsoDialcode get(fn get_iso_dialcode): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
-        // Standard Iso dial code for country code
+        // Currencies data
         Currencies get(fn get_currency): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
         // Manufacturers name and website
         Manufacturers get(fn get_manufacturer): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
@@ -449,7 +449,7 @@ decl_module! {
         #[weight = 10000]
         pub fn create_update_seller(origin, configuration: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed
-            let sender = ensure_signed(origin)?;
+            let mut sender = ensure_signed(origin)?;
             //check configuration length
             ensure!(configuration.len() > 12, Error::<T>::ConfigurationTooShort);
             ensure!(configuration.len() < 8192, Error::<T>::ConfigurationTooLong);
@@ -615,6 +615,13 @@ decl_module! {
             if defaultreturnpolicy.len()>0 {    
                 let drp=vecu8_to_u32(defaultreturnpolicy);
                 ensure!(drp<3650,Error::<T>::DefaultReturnPolicyIsExcessive);
+            }
+            // check for optional seller account (when the signer acts as a proxy for gasless transactions)
+            let selleraccount=json_get_value(configuration.clone(),"selleraccount".as_bytes().to_vec());
+            if selleraccount.len()>0 {
+                let selleraccountv=bs58::decode(selleraccount).into_vec().unwrap();
+                let selleraccountid=T::AccountId::decode(&mut &selleraccountv[1..33]).unwrap_or_default();
+                sender=selleraccountid;
             }
             //store seller on chain
             if Sellers::<T>::contains_key(&sender)==false {
@@ -852,7 +859,7 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
-         /// Create a new Iso country code and name
+         /// Create a new Iso dial code and name
          #[weight = 1000]
          pub fn create_dialcode_country(origin, countrycode: Vec<u8>, dialcode: Vec<u8>) -> dispatch::DispatchResult {
              // check the request is signed from the Super User
