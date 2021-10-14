@@ -58,6 +58,10 @@ decl_storage! {
         ShippingRates get(fn get_shipper_rate): map hasher(blake2_128_concat) u32 => Option<Vec<u8>>;
         // Login data: email and password hashes. The password is hashed with ARGON2 and then furher encrypted with 3 layers of symmetric encryption.
         LoginData get(fn get_login_data): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
+        // Email -> Account id
+        EmailAccount get(fn get_email_account): map hasher(blake2_128_concat) Vec<u8> => T::AccountId;
+        // Encrypted Secret Seed (double encrption)
+        EmailEncryptedSeed get(fn get_encrypted_seed): map hasher(blake2_128_concat) Vec<u8> => Option<Vec<u8>>;
     }
 }
 
@@ -94,7 +98,7 @@ decl_event!(
         MarketShippingRateCreated(u32,Vec<u8>),             // A new shipping rate has been created
         MarketShippingRateDestroyed(u32),                   // A shipping rate has been removed
         MarketPlaceProductUpdated(u32,Vec<u8>),             // A product has been created or updated
-        MarketPlaceLoginDataCreated(Vec<u8>, Vec<u8>),      // A new login data has been created
+        MarketPlaceLoginDataCreated(Vec<u8>, Vec<u8>,AccountId), // A new login data has been created
         MarketPlaceLoginDataDestroyed(Vec<u8>),             // A login data has been destroyed
     }
 );
@@ -362,6 +366,8 @@ decl_error! {
         EmailHashAlreadyPresent,
         // Email hash has not been found on chain
         EmailHashNotFound,
+        /// Signer of transaction is not authorized to execute it
+        SignerIsNotAuthorized
     }
 }
 
@@ -450,15 +456,16 @@ decl_module! {
         pub fn create_update_seller(origin, configuration: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed
             let mut sender = ensure_signed(origin)?;
+            let originalsigner=sender.clone();
             //check configuration length
             ensure!(configuration.len() > 12, Error::<T>::ConfigurationTooShort);
             ensure!(configuration.len() < 8192, Error::<T>::ConfigurationTooLong);
             // check json validity
             ensure!(json_check_validity(configuration.clone()),Error::<T>::InvalidJson);
-            // checking seller type
+            // checking seller type 1= Company, 2= Freelancer, 3= Individual, 4 == Government Agency 4 == NGO
             let sellertype=json_get_value(configuration.clone(),"sellertype".as_bytes().to_vec());
             let sellertypeu32=vecu8_to_u32(sellertype);
-            ensure!(sellertypeu32==1 || sellertypeu32==2 || sellertypeu32==3 ,Error::<T>::SellerTypeInvalid);
+            ensure!(sellertypeu32==1 || sellertypeu32==2 || sellertypeu32==3 || sellertypeu32==4 || sellertypeu32==5,Error::<T>::SellerTypeInvalid);
             // checking company name or name/surname
             let sellername=json_get_value(configuration.clone(),"name".as_bytes().to_vec());
             ensure!(sellername.len()>5,Error::<T>::SellerNameTooShort);
@@ -623,11 +630,21 @@ decl_module! {
                 let selleraccountid=T::AccountId::decode(&mut &selleraccountv[1..33]).unwrap_or_default();
                 sender=selleraccountid;
             }
+
             //store seller on chain
             if Sellers::<T>::contains_key(&sender)==false {
                 // Insert new seller
                 Sellers::<T>::insert(sender.clone(),configuration.clone());
             } else {
+                // check for proxy account before updating
+                if originalsigner != sender {
+                    let settings=Sellers::<T>::get(sender.clone()).unwrap();
+                    let proxyaccount=json_get_value(settings.clone(),"proxyaccount".as_bytes().to_vec());
+                    ensure!(proxyaccount.len()>0,Error::<T>::SignerIsNotAuthorized);
+                    let proxyaccountv=bs58::decode(proxyaccount).into_vec().unwrap();
+                    let proxyaccountid=T::AccountId::decode(&mut &proxyaccountv[1..33]).unwrap_or_default();
+                    ensure!(proxyaccountid==originalsigner,Error::<T>::SignerIsNotAuthorized);
+                }
                 // Replace Seller Data 
                 Sellers::<T>::take(sender.clone());
                 Sellers::<T>::insert(sender.clone(),configuration.clone());
@@ -1311,7 +1328,7 @@ decl_module! {
          }
          /// Create a new Login Data
         #[weight = 1000]
-        pub fn create_login_data(origin, emailhash: Vec<u8>, encryptedpwdhash: Vec<u8>) -> dispatch::DispatchResult {
+        pub fn create_login_data(origin, emailhash: Vec<u8>, encryptedpwdhash: Vec<u8>, accountid: T::AccountId,encryptedseed: Vec<u8>) -> dispatch::DispatchResult {
             // check the request is signed from the Super User
             let _sender = ensure_signed(origin)?;
             // check Email hash length
@@ -1322,20 +1339,29 @@ decl_module! {
             ensure!(LoginData::contains_key(&emailhash)==false, Error::<T>::EmailHashAlreadyPresent);
             // store the Login Data
             LoginData::insert(emailhash.clone(),encryptedpwdhash.clone());
+            // store the Account id
+            EmailAccount::<T>::insert(emailhash.clone(),accountid.clone());
+            // store the encrypted seed (double encryption layer)
+            EmailEncryptedSeed::insert(emailhash.clone(),encryptedseed.clone());
             // Generate event
-            Self::deposit_event(RawEvent::MarketPlaceLoginDataCreated(emailhash,encryptedpwdhash));
+            Self::deposit_event(RawEvent::MarketPlaceLoginDataCreated(emailhash,encryptedpwdhash,accountid));
             // Return a successful DispatchResult
             Ok(())
         }
-        /// Destroy an Iso country code and name
+        /// Destroy a login data
         #[weight = 1000]
         pub fn destroy_login_data(origin, emailhash: Vec<u8>,) -> dispatch::DispatchResult {
             // check the request is signed from the same signer of the original writing
-            let _sender = ensure_signed(origin)?;
-            // verify the country code exists
+            let sender = ensure_signed(origin)?;
+            // verify the login data exists
             ensure!(LoginData::contains_key(&emailhash)==true, Error::<T>::EmailHashNotFound);
-            // Remove email hash
+            ensure!(EmailAccount::<T>::contains_key(&emailhash)==true, Error::<T>::EmailHashNotFound);
+            let accountid=EmailAccount::<T>::get(&emailhash);
+            ensure!(accountid==sender,Error::<T>::SignerIsNotAuthorized);
+            // Remove email hash and accountid and encrypted seed
             LoginData::take(emailhash.clone());
+            EmailAccount::<T>::take(emailhash.clone());
+            EmailEncryptedSeed::take(emailhash.clone());
             // Generate event
             //it can leave orphans, anyway it's a decision of the super user
             Self::deposit_event(RawEvent::MarketPlaceLoginDataDestroyed(emailhash));
