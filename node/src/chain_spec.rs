@@ -293,57 +293,81 @@ pub fn mainnet_config() -> Result<ChainSpec, String> {
 			// im-online
 			// authority-discovery
 			vec![
-				(
-					hex!["6c08c1f8e0cf1e200b24b43fca4c4e407b963b6b1e459d1aeff80c566a1da469"].into(),
-					hex!["864eff3160ff8609c030316867630850a9d6e35c47d3efe54de44264fef7665e"].into(),
-					hex!["dc41d9325da71d90806d727b826d125cd523da28eb39ab048ab983d7bb74fb32"].unchecked_into(),
-					hex!["8a688a748fd39bedaa507c942600c40478c2082dee17b8263613fc3c086b0c53"].unchecked_into(),
-					hex!["3a4e80c48718f72326b49c4ae80199d35285643751e75a743f30b7561b538676"].unchecked_into(),
-					hex!["68d39d0d386ed4e9dd7e280d62e7dc9cf61dc508ef25efb74b6d740fa4dde463"].unchecked_into(),
+				(   // boot node - validator 1
+					hex!["b0737e722d5988f253eeb4d772a3f1177ae39cea6e5230ca9f36c6b58784dd0c"].into(),
+					hex!["0af4f754f70707f465d7c9a4390176c7094262a83defae3f67dcf98428a35152"].into(),
+					hex!["827f4f79c87bb5e1589c458e654928d377c7fe247b9698971f36b3886d077c73"].unchecked_into(),
+					hex!["8a1d180e87eea7ad8f5a3a1c762e2b3a24a05f9fab0f2c2f9f1d3d2dd36f4638"].unchecked_into(),
+					hex!["56bcf1a18384a3ba7a74324b00dfc237283ad4f726e90eac1e1f4691f1afb62f"].unchecked_into(),
+					hex!["2aa508cc61fa7ea739adfcbe174731b154bd6ff4ebc51c45f8a1ef41f545dd64"].unchecked_into(),
 				),
-				(
-					hex!["5c22097b5c8b5912ce28b72ba4de52c3da8aca9379c748c1356a6642107d4c4a"].into(),
-					hex!["543fd4fd9a284c0f955bb083ae6e0fe7a584eb6f6e72b386071a250b94f99a59"].into(),
-					hex!["f15a651be0ea0afcfe691a118ee7acfa114d11a27cf10991ee91ea97942d2135"].unchecked_into(),
-					hex!["70e74bed02b733e47bc044da80418fd287bb2b7a0c032bd211d7956c68c9561b"].unchecked_into(),
-					hex!["724cefffeaa10a44935a973511b9427a8c3c4fb08582afc4af8bf110fe4aac4b"].unchecked_into(),
-					hex!["a068435c438ddc61b1b656e3f61c876e109706383cf4e27309cc1e308f88b86f"].unchecked_into(),
+				(   // boot node - validator 2
+					hex!["7c8b95a583a2ebc5281afce313a791febc52009a7b64da295cf26c4b033fd855"].into(),
+					hex!["ee2cccba0d0fc5776c70a863b5bb4a8cf64127eb312ad5a190d1cc405d38fb71"].into(),
+					hex!["0224a8f41eef0ddceb220993d5e9610b69b7aec3e1b60a9ad71a8a02a3e1b133"].unchecked_into(),
+					hex!["5637617b04feb9933bc576678fc8a82e324cdbf823a9b334c5335ae8fa0d5d2d"].unchecked_into(),
+					hex!["92294031a34926cba2f8cb07e9a0143531081ad150dd172af4ff3646a9fc2b75"].unchecked_into(),
+					hex!["7c19e411a50412eea1040262190dd67e366a40f4c83236df279373702003665a"].unchecked_into(),
 				),
-				(
-					hex!["a67f388c1b8d68287fb3288b5aa36f069875c15ebcb9b1e4e62678aad6b24b44"].into(),
-					hex!["ec912201d98911842b1a8e82983f71f2116dd8b898798ece4e1d210590de7d60"].into(),
-					hex!["347f5342875b9847ec089ca723c1c09cc532e53dca4b940a6138040025d94eb9"].unchecked_into(),
-					hex!["64841d2d124e1b1dd5485a58908ab244b296b184ae645a0c103adcbcc565f070"].unchecked_into(),
-					hex!["50a3452ca93800a8b660d624521c240e5cb20a47a33d23174bb7681811950646"].unchecked_into(),
-					hex!["7a0caeb50fbcd657b8388adfaeca41a2ae3e85b8916a2ce92761ce1a4db89035"].unchecked_into(),
+				(   // boot node - validator 3
+					hex!["82b07e9079d853f54dfc63564b3751fd4ee393fa59faa70fcabda06db6d67036"].into(),
+					hex!["c058ec9085e737ea5162990d214174d2b552814fcb7eac407e5577cf65112236"].into(),
+					hex!["0b34d6342c30d57690687b1d68aa44e08e405c0843673b3467c83985ad312293"].unchecked_into(),
+					hex!["ecb522c88e895a58338210764b475ad23474835258db9ba80d8bd5beda63657c"].unchecked_into(),
+					hex!["bee3de2cb6d6f5bb0cae3a8e4153acdf0180f5a682384f6a859cd62933991615"].unchecked_into(),
+					hex!["c830456eccd9bb6e22545319ff9a3a772eec89d2020c1d2de5c4e26aff01956f"].unchecked_into(),
+				),
+                (   // boot node - validator 4
+					hex!["f673ddbb4deb0d8b9bf4aa8ee1ce101d1a56bb6fd57011b71c4e9afbc438e270"].into(),
+					hex!["ced0a8ea6374e004e4213b87e5029a1d5410fe8c18e2f8e262b3e8fa8ae03341"].into(),
+					hex!["9f016f3dbc482fa93465a88c6c59b9242d024ef12b4e7e9bb3a8edce0a8a72ef"].unchecked_into(),
+					hex!["46dd4d123ecd630d3853462f389b581fde141afd15de85d76e5781bdc262e501"].unchecked_into(),
+					hex!["0e2c219d1aaf5ba61c14374e5441b66b12a46bb9ec9ea4c00b838928ec0c194f"].unchecked_into(),
+					hex!["d4dee9a4744a42e5333a87e1f11e3b784fda81dab6a4438fd1a296bdffd58b27"].unchecked_into(),
 				),
 			],
 			// Sudo
-			hex!["9c48c0498bdf1d716f4544fc21f050963409f2db8154ba21e5233001202cbf08"].into(),
+			hex!["86376ae63c12523faf04d8204aa88051018f77a8521abe41a21981d103a9f65e"].into(),
 			// Endowed accounts
 			vec![
-				// Investors
-				(hex!["3c483acc759b79f8b12fa177e4bdfa0448a6ea03c389cf4db2b4325f0fc8f84a"].into(), 4_340_893_656 as u128),
-				// Liquidity bridge reserves
-				(hex!["5adebb35eb317412b58672db0434e4b112fcd27abaf28039f07c0db155b26650"].into(), 2_000_000_000 as u128),
-				// Lockup & core nominators
-				(hex!["746db342d3981b230804d1a187245e565f8eb3a2897f83d0d841cc52282e324c"].into(), 500_000_000 as u128),
-				(hex!["da512d1335a62ad6f79baecfe87578c5d829113dc85dbb984d90a83f50680145"].into(), 500_000_000 as u128),
-				(hex!["b493eacad9ca9d7d8dc21b940966b4db65dfbe01084f73c1eee2793b1b0a1504"].into(), 500_000_000 as u128),
-				(hex!["849cf6f8a093c28fd0f699b47383767b0618f06aad9df61c4a9aff4af5809841"].into(), 250_000_000 as u128),
-				(hex!["863bd6a38c7beb526be033068ac625536cd5d8a83cd51c1577a1779fab41655c"].into(), 250_000_000 as u128),
-				(hex!["c2d2d7784e9272ef1785f92630dbce167a280149b22f2ae3b0262435e478884d"].into(), 250_000_000 as u128),
-				// Sudo
-				(hex!["9c48c0498bdf1d716f4544fc21f050963409f2db8154ba21e5233001202cbf08"].into(), 100_000_000 as u128),
-				// Developer pool & faucet
-				(hex!["1acc4a5c6361770eac4da9be1c37ac37ea91a55f57121c03240ceabf0b7c1c5e"].into(), 10_000_000 as u128),
+				// 25 Initial Investors 
+				(hex!["34327590b5e13f848fb5b5f595d88f346e0e660a0765c7814e6da819f476af39"].into(), 1_000_000 as u128),
+                (hex!["ba3a96a7cc529f3cf4260c8c630f4fd96b905cd62cd8e2c6f6a73b848c141a20"].into(), 1_000_000 as u128),
+                (hex!["f6c6b87b2a2c2bf8d4b4a2466276e8afe1b9071dfe54e4446d4a077f4361ef03"].into(), 1_000_000 as u128),
+                (hex!["a635142b0441640118075a35c53f805e4fb9ff837df677f3172023d56da14c55"].into(), 1_000_000 as u128),
+                (hex!["e4d00d108452c7d43e4ed6e8192af278a81e342a5887692a09b89cc0570bb429"].into(), 1_000_000 as u128),
+                (hex!["26f67481478dbc8a2d506c7d701fbd343601a1af0e23428be9cc13247b772b12"].into(), 1_000_000 as u128),
+                (hex!["5a2d58b6b1f0fd0a5465441d206a91c9b3681f3785d4715190b00139b4b68126"].into(), 1_000_000 as u128),
+                (hex!["98a881ee93c155af4607d165801a987816c84e053033fad985a67a81d6d4fc78"].into(), 1_000_000 as u128),
+                (hex!["e864895cce543b4a95a80cac03c72c81b2e4cb20d710779d8c71326522f05e1a"].into(), 1_000_000 as u128),
+                (hex!["24614524bee1e9dddaa4001a9d9b44fb8ddbba0612cb72f7dccaa345ca6fe92d"].into(), 1_000_000 as u128),
+                (hex!["5cdbc54a0695e743fd22548c18792c026bc4e494c8d51d15faa3b4d31fc61a67"].into(), 1_000_000 as u128),
+                (hex!["f0cb2161c37a59f27a6511f4ed6667d92c52f7c5be5d73ccd0e6b8753f5d6a64"].into(), 1_000_000 as u128),
+                (hex!["c8edbe53d229e822b107da22addc8ea8d036c4cfef1c4af7b960d92bbd4f3743"].into(), 1_000_000 as u128),
+                (hex!["90fd007edb662dab1deee6eb671b72e3606b53e771e483c5e65a2ca89f559255"].into(), 1_000_000 as u128),
+                (hex!["c23a89def4325818f9f0da193899c337b36b3929b8a48874a2f20623d5cd8f74"].into(), 1_000_000 as u128),
+                (hex!["364ee2c88ea9659574e62ab5c0427f4f0dac860d12ebb896e2db062769438a7e"].into(), 1_000_000 as u128),
+                (hex!["e26cf1fdcd473246b9faf6856c36d359c7c48321186c83ea41e066cfe9348c39"].into(), 1_000_000 as u128),
+                (hex!["38948ee1091b8e3d97ed0f01ae0a3ea8d26a15b7ab7bf8ddc9ebb8103aa94d5a"].into(), 1_000_000 as u128),
+                (hex!["32931c37b3dbac85db6803b6d668f866a3f9ad51ee83122f43168973e75ed246"].into(), 1_000_000 as u128),
+                (hex!["8a55590ef7793a4afa0711a66993b211437c81148c7c9b645e7f469db34cd702"].into(), 1_000_000 as u128),
+                (hex!["7a7beae22fe29ca3159648962f1e5fddc0ebbf7961ecc45b3dd48062286d5106"].into(), 1_000_000 as u128),
+                (hex!["34f0843fd27b044090690d6a74e818a3763fc7a72a83b955dc2429025cfdc075"].into(), 1_000_000 as u128),
+                (hex!["660024ab5f5619df42e565b8fe3b59baa0c30ac658e1dff1c19829fdf45d6a2d"].into(), 1_000_000 as u128),
+                // Liquidity available for future investors
+                (hex!["a4459efd92d4b57075912fe08491cb4e182abdcfc56f159b708c6fd00405ec3a"].into(), 73_000_000 as u128),
+                // Sudo Account (super user)
+                (hex!["86376ae63c12523faf04d8204aa88051018f77a8521abe41a21981d103a9f65e"].into(), 1_000_000 as u128),
+				// Service account for gas-less transactions
+				(hex!["3ab2bf92543aa64a59cb0b76a6608bba9be58698fd1d4732ac1eb5ea426fee77"].into(), 1_000_000 as u128),
 			],
 		),
 		// Bootnodes
 		vec![
-			"/dns/bootnode-1.aisland.io/tcp/30333/p2p/12D3KooWFHSc9cUcyNtavUkLg4VBAeBnYNgy713BnovUa9WNY5pp".parse().unwrap(),
-			"/dns/bootnode-2.aisland.io/tcp/30333/p2p/12D3KooWAQqcXvcvt4eVEgogpDLAdGWgR5bY1drew44We6FfJAYq".parse().unwrap(),
-			"/dns/bootnode-3.aisland.io/tcp/30333/p2p/12D3KooWCT7rnUmEK7anTp7svwr4GTs6k3XXnSjmgTcNvdzWzgWU".parse().unwrap(),
+			"/dns/validator1.aisland.io/tcp/30333/p2p/12D3KooWFHSc9cUcyNtavUkLg4VBAeBnYNgy713BnovUa9WNY5pp".parse().unwrap(),
+			"/dns/validator2.aisland.io/tcp/30333/p2p/12D3KooWAQqcXvcvt4eVEgogpDLAdGWgR5bY1drew44We6FfJAYq".parse().unwrap(),
+			"/dns/validator3.aisland.io/tcp/30333/p2p/12D3KooWCT7rnUmEK7anTp7svwr4GTs6k3XXnSjmgTcNvdzWzgWU".parse().unwrap(),
+            "/dns/validator4.aisland.io/tcp/30333/p2p/12D3KooWCT7rnUmEK7anTp7svwr4GTs6k3XXnSjmgTcNvdzWzgWU".parse().unwrap(),
 		],
 		// Telemetry
 		TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
