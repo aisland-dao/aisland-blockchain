@@ -364,10 +364,10 @@ pub fn mainnet_config() -> Result<ChainSpec, String> {
 		),
 		// Bootnodes
 		vec![
-			"/dns/validator1.aisland.io/tcp/30333/p2p/12D3KooWFHSc9cUcyNtavUkLg4VBAeBnYNgy713BnovUa9WNY5pp".parse().unwrap(),
-			"/dns/validator2.aisland.io/tcp/30333/p2p/12D3KooWAQqcXvcvt4eVEgogpDLAdGWgR5bY1drew44We6FfJAYq".parse().unwrap(),
-			"/dns/validator3.aisland.io/tcp/30333/p2p/12D3KooWCT7rnUmEK7anTp7svwr4GTs6k3XXnSjmgTcNvdzWzgWU".parse().unwrap(),
-            "/dns/validator4.aisland.io/tcp/30333/p2p/12D3KooWCT7rnUmEK7anTp7svwr4GTs6k3XXnSjmgTcNvdzWzgWU".parse().unwrap(),
+			"/dns/validator1.aisland.io/tcp/30333/p2p/12D3KooWNwimDHG5AtWNr7MWzCTGhGApbp3zmJSY6r35EWM5xMe4".parse().unwrap(),
+			"/dns/validator2.aisland.io/tcp/30333/p2p/12D3KooWHmz6jhF7nMTLYkAB4aGphWNHJ3RvKjvULWnfrYGKp4WY".parse().unwrap(),
+			"/dns/validator3.aisland.io/tcp/30333/p2p/12D3KooWHZ9AyY9B9fDwfhNLsctBpPxukSX7Kmm3mgmLXgTytHzX".parse().unwrap(),
+            "/dns/validator4.aisland.io/tcp/30333/p2p/12D3KooWNHj9EEsSxAVRg3gu7Pe4TaHdzXy72zsr4YEoDf45ccXS".parse().unwrap(),
 		],
 		// Telemetry
 		TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
