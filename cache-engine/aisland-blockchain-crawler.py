@@ -1574,13 +1574,13 @@ def process_block(blocknumber):
     print ("##########################")
     cnt=0    
     for extrinsic in result['extrinsics']:
-        if extrinsic.address:
+        if hasattr(extrinsic,'address'):
             signed_by_address = extrinsic.address.value
         else:
             signed_by_address = None
         print('\nPallet: {}\nCall: {}\nSigned by: {}'.format(
-            extrinsic.call_module.name,
-            extrinsic.call.name,
+            extrinsic['call']['call_module'],
+            extrinsic['call']['call_function'],
             signed_by_address
         ))
         # check for exstrinc success or not
@@ -1595,41 +1595,41 @@ def process_block(blocknumber):
         else:
             print("Extrinsic succeded: ",events[cnt].event.name)
         #for TimeStamp call we set the time of the following transactions
-        if extrinsic.call_module.name=="Timestamp" and extrinsic.call.name=="set":
+        if extrinsic['call']['call_module']=="Timestamp" and extrinsic['call']['call_function']=="set":
             currentime=extrinsic.params[0]['value']
         #Balance Transfer we update the transactions
-        if extrinsic.call_module.name=="Balances" and ( extrinsic.call.name=="transfer" or extrinsic.call.name=="transfer_keep_alive"):
+        if extrinsic['call']['call_module']=="Balances" and ( extrinsic['call']['call_function']=="transfer" or extrinsic['call']['call_function']=="transfer_keep_alive"):
             ## store the transaction in the database
             store_transaction(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,extrinsic.params[0]['value'],extrinsic.params[1]['value'],currentime)
         #Impact Actions - Vote Approval Request
-        if extrinsic.call_module.name=="ImpactActions" and extrinsic.call.name=="vote_approval_request":
+        if extrinsic['call']['call_module']=="ImpactActions" and extrinsic['call']['call_function']=="vote_approval_request":
             impactactions_voteapprovalrequest(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'])
         #Impact Actions - Vote Approval Request
-        if extrinsic.call_module.name=="ImpactActions" and extrinsic.call.name=="request_approval":
+        if extrinsic['call']['call_module']=="ImpactActions" and extrinsic['call']['call_function']=="request_approval":
             impactactions_newapprovalrequest(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'])            
         #Impact Actions - Assign Auditor to Approval Request
-        if extrinsic.call_module.name=="ImpactActions" and extrinsic.call.name=="assign_auditor":
+        if extrinsic['call']['call_module']=="ImpactActions" and extrinsic['call']['call_function']=="assign_auditor":
             impactactions_assignauditorapprovalrequest(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value']) 
         #Impact Actions - Remove Assigned Auditor to Approval Request
-        if extrinsic.call_module.name=="ImpactActions" and extrinsic.call.name=="destroy_assigned_auditor":
+        if extrinsic['call']['call_module']=="ImpactActions" and extrinsic['call']['call_function']=="destroy_assigned_auditor":
             impactactions_destory_assignedauditorapprovalrequest(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'])  
         #Assets - Create new asset as regular user
-        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="create":
+        if extrinsic['call']['call_module']=="Assets" and extrinsic['call']['call_function']=="create":
             assets_force_create(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'],extrinsic.params[3]['value'])
         #Assets - Destroy asset as regular user
-        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="destroy":
+        if extrinsic['call']['call_module']=="Assets" and extrinsic['call']['call_function']=="destroy":
             assets_force_destroy(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'])
         #Assets - Mint assets in favor of an account
-        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="mint":
+        if extrinsic['call']['call_module']=="Assets" and extrinsic['call']['call_function']=="mint":
             assets_mint(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'])
         #Assets - Burn assets decreasing the balance of an account
-        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="burn":
+        if extrinsic['call']['call_module']=="Assets" and extrinsic['call']['call_function']=="burn":
             assets_burn(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'])
         #Assets - Transfer assets in favor of an account
-        if extrinsic.call_module.name=="Assets" and extrinsic.call.name=="transfer":
+        if extrinsic['call']['call_module']=="Assets" and extrinsic['call']['call_function']=="transfer":
             assets_transfer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'])        
         # Sudo -> Impact Actions 
-        if extrinsic.call_module.name=="Sudo" and extrinsic.call.name=="sudo":
+        if extrinsic['call']['call_module']=="Sudo" and extrinsic['call']['call_function']=="sudo":
             print(extrinsic.params[0].get('value'))
             c=extrinsic.params[0].get('value')
             # new impact action
@@ -1842,15 +1842,23 @@ def process_block(blocknumber):
                 print("Shipper id: ",c['call_args'][0]['value'])
                 marketplace_destroyshippingrates(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
         # Loop through call params
-        for param in extrinsic.params:
-            if param['type'] == 'Compact<Balance>':
-                param['value'] = '{} {}'.format(param['value'] / 10 ** substrate.token_decimals, substrate.token_symbol)
-            print("Param '{}': {}".format(param['name'], param['value']))
+        # print("### extrinsic['call']['call_args'] ###")
+        #print(extrinsic['call']['call_args'])
+        #print("### extrinsic['call']['call_args']['now'] ###")
+        #print(extrinsic['call']['call_args']['now'])        
+        #for param in extrinsic['call']['call_args']:
+        #    print("### param ###")
+        #    print(param)
+        #    if param.type == 'Compact<Balance>':
+        #        param.value = '{} {}'.format(param['value'] / 10 ** substrate.token_decimals, substrate.token_symbol)
+        #    print("Param '{}': {}".format(param.name, paramvalue))
+
         cnt=cnt+1
 
 # subscription handler for new blocks written
 def subscription_handler(obj, update_nr, subscription_id):
-    print(f"New block #{obj['header']['number']} produced by {obj['author']} hash: {obj['header']['hash']}")
+    #print(obj)
+    print(f"New block #{obj['header']['number']} produced by {obj['author']} hash: {obj['header']['parentHash']}")
     # call the block management function
     process_block(obj['header']['number'])
     

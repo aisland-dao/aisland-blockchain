@@ -46,7 +46,7 @@ to reflect your database configuration.
 The Aisland node should run locally previously.  
 Execute from the command line:  
 ```sh
-./bit-blockchain-crawler.sh
+./aisland-blockchain-crawler.sh
 ```
  
  To process the past blocks the node should run in "archive" mode by the additional the parameter:  
