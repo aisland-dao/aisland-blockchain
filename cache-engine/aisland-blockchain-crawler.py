@@ -1073,11 +1073,13 @@ def marketplace_newdepartment(blocknumber,txhash,signer,currenttime,departmentid
     print("Signer: ",signer)
     print("Id Department: ",departmentid)
     print("Description: ",description)
+    dpid=str(departmentid)
+    descriptionv=bytes.fromhex(str(description)[2:]).decode('utf-8')
     cursor = cnx.cursor()
-    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=str(currenttime).replace("T"," ")
     dtblockchain=dtblockchain[0:19]
     addtx="insert into mpproductdepartments set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,departmentid=%s,description=%s"
-    datatx=(blocknumber,txhash,signer,dtblockchain,departmentid,description)
+    datatx=(blocknumber,txhash,signer,dtblockchain,dpid,descriptionv)
     try:
         cursor.execute(addtx,datatx)
     except mysql.connector.Error as err:
@@ -1094,11 +1096,12 @@ def marketplace_destroydepartment(blocknumber,txhash,signer,currenttime,departme
     print("Current time: ",currenttime)
     print("Signer: ",signer)
     print("Id Department: ",departmentid)
+    dpid=str(departmentid)
     cursor = cnx.cursor()
-    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=str(currenttime).replace("T"," ")
     dtblockchain=dtblockchain[0:19]
     deltx="delete from mpproductdepartments where departmentid=%s"
-    datatx=(departmentid,)
+    datatx=(dpid,)
     try:
         cursor.execute(deltx,datatx)
     except mysql.connector.Error as err:
@@ -1117,11 +1120,14 @@ def marketplace_newcategory(blocknumber,txhash,signer,currenttime,departmentid,c
     print("Id Department: ",departmentid)
     print("Id Category: ",categoryid)
     print("Description: ",description)
+    dpid=str(departmentid)
+    ctid=str(categoryid)
+    descriptionv=bytes.fromhex(str(description)[2:]).decode('utf-8')
     cursor = cnx.cursor()
-    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=str(currenttime).replace("T"," ")
     dtblockchain=dtblockchain[0:19]
     addtx="insert into mpproductcategories set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,departmentid=%s,categoryid=%s,description=%s"
-    datatx=(blocknumber,txhash,signer,dtblockchain,departmentid,categoryid,description)
+    datatx=(blocknumber,txhash,signer,dtblockchain,dpid,ctid,descriptionv)
     try:
         cursor.execute(addtx,datatx)
     except mysql.connector.Error as err:
@@ -1139,6 +1145,8 @@ def marketplace_destroycategory(blocknumber,txhash,signer,currenttime,department
     print("Signer: ",signer)
     print("Id Department: ",departmentid)
     print("Id Category: ",categoryid)
+    dpid=str(departmentid)
+    ctid=str(categoryid)
     cursor = cnx.cursor()
     deltx="delete from mpproductcategories where departmentid=%s and categoryid=%s"
     datatx=(departmentid,categoryid)
@@ -1240,12 +1248,14 @@ def marketplace_newmanufacturer(blocknumber,txhash,signer,currenttime,manufactur
     print("Current time: ",currenttime)
     print("Signer: ",signer)
     print("Id Manufacturer: ",manufacturerid)
-    print("Info: ",info)
+    print("Info: ",str(info)[2:])
+    mnid=str(manufacturerid)
+    infov=bytes.fromhex(str(info)[2:]).decode('utf-8')
     cursor = cnx.cursor()
-    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=str(currenttime).replace("T"," ")
     dtblockchain=dtblockchain[0:19]
     addtx="insert into mpmanufacturers set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,manufacturerid=%s,info=%s"
-    datatx=(blocknumber,txhash,signer,dtblockchain,manufacturerid,info)
+    datatx=(blocknumber,txhash,signer,dtblockchain,mnid,infov)
     try:
         cursor.execute(addtx,datatx)
     except mysql.connector.Error as err:
@@ -1262,9 +1272,10 @@ def marketplace_destroymanufacturer(blocknumber,txhash,signer,currenttime,manufa
     print("Current time: ",currenttime)
     print("Signer: ",signer)
     print("Id Manufacturer: ",manufacturerid)
+    mnid=str(manufacturerid)
     cursor = cnx.cursor()
     deltx="delete from mpmanufacturers where manufacturerid=%s"
-    datatx=(manufacturerid,)
+    datatx=(mnid,)
     try:
         cursor.execute(deltx,datatx)
     except mysql.connector.Error as err:
@@ -1405,11 +1416,14 @@ def marketplace_newcountry(blocknumber,txhash,signer,currenttime,countryid,name)
     print("Signer: ",signer)
     print("Id Country: ",countryid)
     print("Name: ",name)
+    countryidv=bytes.fromhex(str(countryid)[2:]).decode('utf-8')
+    namev=bytes.fromhex(str(name)[2:]).decode('utf-8')
+
     cursor = cnx.cursor()
-    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=str(currenttime).replace("T"," ")
     dtblockchain=dtblockchain[0:19]
     addtx="insert into mpisocountries set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,countryid=%s,name=%s"
-    datatx=(blocknumber,txhash,signer,dtblockchain,countryid,name)
+    datatx=(blocknumber,txhash,signer,dtblockchain,countryidv,namev)
     try:
         cursor.execute(addtx,datatx)
     except mysql.connector.Error as err:
@@ -1564,7 +1578,13 @@ def marketplace_destroyshippingrates(blocknumber,txhash,signer,currenttime,shipp
 def process_block(blocknumber):
     # Retrieve extrinsics in block
     print("Processing Block # ",blocknumber)
-    result = substrate.get_block(block_number=blocknumber)
+    try:
+        result = substrate.get_block(block_number=blocknumber)
+    except Exception as e:
+        print("****** WARNING IN BLOCK *****")
+        print(e)
+        print("******* END WARNING *********")
+        return
     print ("##########################")
     print(result)
     print("Block Hash: ",result['header']['hash'])
@@ -1575,7 +1595,7 @@ def process_block(blocknumber):
     cnt=0    
     for extrinsic in result['extrinsics']:
         if hasattr(extrinsic,'address'):
-            signed_by_address = extrinsic.address.value
+            signed_by_address = extrinsic.address
         else:
             signed_by_address = None
         print('\nPallet: {}\nCall: {}\nSigned by: {}'.format(
@@ -1594,9 +1614,13 @@ def process_block(blocknumber):
             continue
         else:
             print("Extrinsic succeded: ",events[cnt].event.name)
+        print("\n\n\nPallet: ",extrinsic['call']['call_module'])
+        print("\n\n\nFunction: ",extrinsic['call']['call_function'],"\n\n\n")
+
         #for TimeStamp call we set the time of the following transactions
-        if extrinsic['call']['call_module']=="Timestamp" and extrinsic['call']['call_function']=="set":
-            currentime=extrinsic.params[0]['value']
+        if extrinsic['call']['call_module']['name']=="Timestamp" and extrinsic['call']['call_function']['name']=="set":
+            print("extrinsic['call']['call_args']",extrinsic['call']['call_args'])
+            currentime=extrinsic['call']['call_args']['now']
         #Balance Transfer we update the transactions
         if extrinsic['call']['call_module']=="Balances" and ( extrinsic['call']['call_function']=="transfer" or extrinsic['call']['call_function']=="transfer_keep_alive"):
             ## store the transaction in the database
@@ -1629,66 +1653,71 @@ def process_block(blocknumber):
         if extrinsic['call']['call_module']=="Assets" and extrinsic['call']['call_function']=="transfer":
             assets_transfer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,extrinsic.params[0]['value'],extrinsic.params[1]['value'],extrinsic.params[2]['value'])        
         # Sudo -> Impact Actions 
-        if extrinsic['call']['call_module']=="Sudo" and extrinsic['call']['call_function']=="sudo":
-            print(extrinsic.params[0].get('value'))
-            c=extrinsic.params[0].get('value')
+        if extrinsic['call']['call_module']['name']=="Sudo" and extrinsic['call']['call_function']['name']=="sudo":
+            print("*****#### SUDO")
+            c=extrinsic['call']['call_args']
+            nmodule=c['call']['call_module']['name']
+            nfunction=c['call']['call_function']['name']
+            parameters=c['call']['call_args']
+            address=str(extrinsic['address'])
+            extrinsic_hash=str(c['call']['call_hash'])
             # new impact action
-            if c['call_module']== 'ImpactActions' and c['call_function']=='create_impact_action':
+            if nmodule== 'ImpactActions' and nfunction=='create_impact_action':
                 print("Impact Actions - Create New Impact Action")
                 print("id: ",c['call_args'][0]['value'])
                 print("data: ",c['call_args'][1]['value'])
                 impactactions_newimpactaction(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # destroy impact action
-            if c['call_module']== 'ImpactActions' and c['call_function']=='destroy_impact_action':
+            if nmodule== 'ImpactActions' and nfunction=='destroy_impact_action':
                 print("Impact Actions - Destroy Impact Action")
                 print("id: ",c['call_args'][0]['value'])
                 impactactions_destroyimpactaction(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # new oracle
-            if c['call_module']== 'ImpactActions' and c['call_function']=='create_oracle':
+            if nmodule== 'ImpactActions' and nfunction=='create_oracle':
                 print("Impact Actions - Create New Oracle")
                 print("id: ",c['call_args'][0]['value'])
                 print("data: ",c['call_args'][1]['value'])
                 impactactions_neworacle(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # destroy oracle
-            if c['call_module']== 'ImpactActions' and c['call_function']=='destroy_oracle':
+            if nmodule== 'ImpactActions' and nfunction=='destroy_oracle':
                 print("Impact Actions - Destroy Oracle")
                 print("id: ",c['call_args'][0]['value'])
                 impactactions_destroyoracle(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # new auditor
-            if c['call_module']== 'ImpactActions' and c['call_function']=='create_auditor':
+            if nmodule== 'ImpactActions' and nfunction=='create_auditor':
                 print("Impact Actions - Create New Auditor")
                 print("id: ",c['call_args'][0]['value'])
                 print("data: ",c['call_args'][1]['value'])
                 impactactions_newauditor(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # destroy auditor
-            if c['call_module']== 'ImpactActions' and c['call_function']=='destroy_auditor':
+            if nmodule== 'ImpactActions' and nfunction=='destroy_auditor':
                 print("Impact Actions - Destroy Auditor")
                 print("id: ",c['call_args'][0]['value'])
                 impactactions_destroyauditor(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # new proxy account
-            if c['call_module']== 'ImpactActions' and c['call_function']=='create_proxy':
+            if nmodule== 'ImpactActions' and nfunction=='create_proxy':
                 print("Impact Actions - Create New Proxy")
                 print("id: ",c['call_args'][0]['value'])
                 print("account: ",c['call_args'][1]['value'])
                 impactactions_newproxy(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # destroy proxy
-            if c['call_module']== 'ImpactActions' and c['call_function']=='destroy_proxy':
+            if nmodule== 'ImpactActions' and nfunction=='destroy_proxy':
                 print("Impact Actions - Destroy Proxy")
                 print("id: ",c['call_args'][0]['value'])
                 impactactions_destroyproxy(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # new category
-            if c['call_module']== 'ImpactActions' and c['call_function']=='create_category':
+            if nmodule== 'ImpactActions' and nfunction=='create_category':
                 print("Impact Actions - Create New Category")
                 print("id: ",c['call_args'][0]['value'])
                 print("description: ",c['call_args'][1]['value'])
                 impactactions_newcategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # destroy category
-            if c['call_module']== 'ImpactActions' and c['call_function']=='destroy_category':
+            if nmodule== 'ImpactActions' and nfunction=='destroy_category':
                 print("Impact Actions - Destroy Category")
                 print("id: ",c['call_args'][0]['value'])
                 impactactions_destroycategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # Force Create Asset
-            if c['call_module']== 'Assets' and c['call_function']=='force_create':
+            if nmodule== 'Assets' and nfunction=='force_create':
                 print("Fungibile Tokens - Create Asset")
                 print("id: ",c['call_args'][0]['value'])
                 print("Owner: ",c['call_args'][1]['value'])
@@ -1696,148 +1725,148 @@ def process_block(blocknumber):
                 print("Minimum Deposit: ",c['call_args'][3]['value'])
                 assets_force_create(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'],c['call_args'][2]['value'],c['call_args'][3]['value'])
             # Force transfer Assets
-            if c['call_module']== 'Assets' and c['call_function']=='force_transfer':
+            if nmodule== 'Assets' and nfunction=='force_transfer':
                 print("Fungible Tokens - Force Transfer")
                 print("id: ",c['call_args'][0]['value'])
                 print("Witnesses Zombies: ",c['call_args'][1]['value'])
                 assets_forcetransfer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,c['call_args'][1]['value'],currentime,c['call_args'][0]['value'],c['call_args'][2]['value'],c['call_args'][3]['value'])
             # Force Destroy Asset
-            if c['call_module']== 'Assets' and c['call_function']=='force_destroy':
+            if nmodule== 'Assets' and nfunction=='force_destroy':
                 print("Fungible Tokens - Create Asset")
                 print("id: ",c['call_args'][0]['value'])
                 print("Witnesses Zombies: ",c['call_args'][1]['value'])
                 assets_force_destroy(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Create New Department
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_department':
+            if nmodule== 'MarketPlace' and nfunction=='create_product_department':
                 print("Market Place - Create New Department")
-                print("id: ",c['call_args'][0]['value'])
-                print("description: ",c['call_args'][1]['value'])
-                marketplace_newdepartment(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+                print("id: ",parameters['uid'])
+                print("description: ",parameters['description'])
+                marketplace_newdepartment(blocknumber,extrinsic_hash,address,currentime,parameters['uid'],parameters['description'])
             # Market Place Destroy Department
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_department':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_product_department':
                 print("Market Place - Destroy Department")
-                print("id: ",c['call_args'][0]['value'])
-                marketplace_destroydepartment(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+                print("id: ",parameters['uid'])
+                marketplace_destroydepartment(blocknumber,extrinsic_hash,address,currentime,parameters['uid'])
             # Market Place Create New Category
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_category':
+            if nmodule== 'MarketPlace' and nfunction=='create_product_category':
                 print("Market Place - Create New Category")
-                print("id Department: ",c['call_args'][0]['value'])
-                print("id Category: ",c['call_args'][1]['value'])
-                print("Description: ",c['call_args'][2]['value'])
-                marketplace_newcategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'],c['call_args'][2]['value'])
+                print("id Department: ",parameters['uiddepartment'])
+                print("id Category: ",parameters['uidcategory'])
+                print("Description: ",parameters['description'])
+                marketplace_newcategory(blocknumber,extrinsic_hash,address,currentime,parameters['uiddepartment'],parameters['uidcategory'],parameters['description'])
             # Market Place Destroy Category
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_category':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_product_category':
                 print("Market Place - Destroy Category")
-                print("id Department: ",c['call_args'][0]['value'])
-                print("id Category: ",c['call_args'][1]['value'])
-                marketplace_destroycategory(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+                print("id Department: ",parameters['uiddepartment'])
+                print("id Category: ",parameters['uidcategory'])
+                marketplace_destroycategory(blocknumber,extrinsic_hash,address,currentime,parameters['uiddepartment'],parameters['uidcategory'])
             # Market Place Create New Color
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_color':
+            if nmodule== 'MarketPlace' and nfunction=='create_product_color':
                 print("Market Place - Create New Color")
                 print("id Color: ",c['call_args'][0]['value'])
                 print("Description: ",c['call_args'][1]['value'])
                 marketplace_newcolor(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Color
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_color':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_product_color':
                 print("Market Place - Destroy Color")
                 print("Colorid: ",c['call_args'][0]['value'])
                 marketplace_destroycolor(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # Market Place Create New Size
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_size':
+            if nmodule== 'MarketPlace' and nfunction=='create_product_size':
                 print("Market Place - Create New Size")
                 print("id Size: ",c['call_args'][0]['value'])
                 print("Info: ",c['call_args'][1]['value'])
                 marketplace_newsize(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Size
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_size':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_product_size':
                 print("Market Place - Destroy Size")
                 print("Colorid: ",c['call_args'][0]['value'])
                 marketplace_destroysize(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # Market Place Create New Manufacturer
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_manufacturer':
+            if nmodule== 'MarketPlace' and nfunction=='create_manufacturer':
                 print("Market Place - Create New Manufacturer")
-                print("id Manufacturer: ",c['call_args'][0]['value'])
-                print("Info: ",c['call_args'][1]['value'])
-                marketplace_newmanufacturer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+                print("id Manufacturer: ",parameters['uid'])
+                print("Info: ",parameters['info'])
+                marketplace_newmanufacturer(blocknumber,extrinsic_hash,address,currentime,parameters['uid'],parameters['info'])
             # Market Place Destroy Manufacturer
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_manufacturer':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_manufacturer':
                 print("Market Place - Destroy Manufacturer")
-                print("Manufacturer id: ",c['call_args'][0]['value'])
-                marketplace_destroymanufacturer(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+                print("Manufacturer id: ",parameters['uid'])
+                marketplace_destroymanufacturer(blocknumber,extrinsic_hash,address,currentime,parameters['uid'])
             # Market Place Create New Brand
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_brand':
+            if nmodule== 'MarketPlace' and nfunction=='create_brand':
                 print("Market Place - Create New Brand")
                 print("id Brand: ",c['call_args'][0]['value'])
                 print("Info: ",c['call_args'][1]['value'])
                 marketplace_newbrand(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Brand
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_brand':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_brand':
                 print("Market Place - Destroy Brand")
                 print("Brand id: ",c['call_args'][0]['value'])
                 marketplace_destroybrand(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # Market Place Create New Model
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_product_model':
+            if nmodule== 'MarketPlace' and nfunction=='create_product_model':
                 print("Market Place - Create New Model")
                 print("id Model: ",c['call_args'][0]['value'])
                 print("Info: ",c['call_args'][1]['value'])
                 marketplace_newmodel(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Model
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_product_model':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_product_model':
                 print("Market Place - Destroy Model")
                 print("Model id: ",c['call_args'][0]['value'])
                 marketplace_destroymodel(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # Market Place Create New Currency
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_currency':
+            if nmodule== 'MarketPlace' and nfunction=='create_currency':
                 print("Market Place - Create New Currency")
                 print("id Currency: ",c['call_args'][0]['value'])
                 print("Info: ",c['call_args'][1]['value'])
                 marketplace_newcurrency(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Currency
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_currency':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_currency':
                 print("Market Place - Destroy Currency")
                 print("Currency id: ",c['call_args'][0]['value'])
                 marketplace_destroycurrency(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # Market Place Create New Country Code
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_iso_country':
+            if nmodule== 'MarketPlace' and nfunction=='create_iso_country':
                 print("Market Place - Create New Country Code")
-                print("id Country: ",c['call_args'][0]['value'])
-                print("Name: ",c['call_args'][1]['value'])
-                marketplace_newcountry(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+                print("id Country: ",parameters['countrycode'])
+                print("Name: ",parameters['countryname'])
+                marketplace_newcountry(blocknumber,extrinsic_hash,address,currentime,parameters['countrycode'],parameters['countryname'])
             # Market Place Destroy Country code
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_iso_country':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_iso_country':
                 print("Market Place - Destroy Country")
-                print("Country id: ",c['call_args'][0]['value'])
-                marketplace_destroycountry(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+                print("Country id: ",parameters['countrycode'])
+                marketplace_destroycountry(blocknumber,extrinsic_hash,address,currentime,parameters['countrycode'])
             # Market Place Create New Dial Code
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_dialcode_country':
+            if nmodule== 'MarketPlace' and nfunction=='create_dialcode_country':
                 print("Market Place - Create New Dial Code")
                 print("id Country: ",c['call_args'][0]['value'])
                 print("Dial Code: ",c['call_args'][1]['value'])
                 marketplace_newdialcode(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Dial code
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_dialcode_country':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_dialcode_country':
                 print("Market Place - Destroy Dial code")
                 print("Country id: ",c['call_args'][0]['value'])
                 marketplace_destroydialcode(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
             # Market Place Create New Shipper
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_shipper':
+            if nmodule== 'MarketPlace' and nfunction=='create_shipper':
                 print("Market Place - Create New Shipper")
                 print("id Shipper: ",c['call_args'][0]['value'])
                 print("Info: ",c['call_args'][1]['value'])
                 marketplace_newshipper(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Shipper Code
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_shipper':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_shipper':
                 print("Market Place - Destroy Shipper")
                 print("Shipper id: ",c['call_args'][0]['value'])
                 marketplace_destroyshipper(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
                  # Market Place Create New Shipper
-            if c['call_module']== 'MarketPlace' and c['call_function']=='create_shipping_rates':
+            if nmodule== 'MarketPlace' and nfunction=='create_shipping_rates':
                 print("Market Place - Create New Shipping Rate")
                 print("id Shipping Rates: ",c['call_args'][0]['value'])
                 print("Info: ",c['call_args'][1]['value'])
                 marketplace_newshippingrates(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
             # Market Place Destroy Shipping Rates
-            if c['call_module']== 'MarketPlace' and c['call_function']=='destroy_shipping_rate':
+            if nmodule== 'MarketPlace' and nfunction=='destroy_shipping_rate':
                 print("Market Place - Destroy Shipping Rates")
                 print("Shipper id: ",c['call_args'][0]['value'])
                 marketplace_destroyshippingrates(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
@@ -1880,6 +1909,10 @@ create_tables()
 if(len(sys.argv)>1):
     if (sys.argv[1]== '--sync' or sys.argv[1]=="-s"):
         sync_blockchain(substrate)
+    if (sys.argv[1]== '--test' or sys.argv[1]=="-t"):
+        x=16981
+        process_block(x)
+
 # subscribe to new block writing and process them in real time
 result = substrate.subscribe_block_headers(subscription_handler, include_author=True)
 print(result)
