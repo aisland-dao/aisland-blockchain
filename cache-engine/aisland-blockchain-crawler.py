@@ -1376,10 +1376,12 @@ def marketplace_newcurrency(blocknumber,txhash,signer,currenttime,currencyid,inf
     print("Id Currency: ",currencyid)
     print("Info: ",info)
     cursor = cnx.cursor()
-    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=str(currenttime).replace("T"," ")
     dtblockchain=dtblockchain[0:19]
+    currencyidv=bytes.fromhex(str(currencyid)[2:]).decode('utf-8')
+    infov=bytes.fromhex(str(info)[2:]).decode('utf-8')
     addtx="insert into mpcurrencies set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,currencyid=%s,info=%s"
-    datatx=(blocknumber,txhash,signer,dtblockchain,currencyid,info)
+    datatx=(blocknumber,txhash,signer,dtblockchain,currencyidv,infov)
     try:
         cursor.execute(addtx,datatx)
     except mysql.connector.Error as err:
@@ -1818,14 +1820,14 @@ def process_block(blocknumber):
             # Market Place Create New Currency
             if nmodule== 'MarketPlace' and nfunction=='create_currency':
                 print("Market Place - Create New Currency")
-                print("id Currency: ",c['call_args'][0]['value'])
-                print("Info: ",c['call_args'][1]['value'])
-                marketplace_newcurrency(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'],c['call_args'][1]['value'])
+                print("id Currency: ",parameters['currencycode'])
+                print("Info: ",parameters['info'])
+                marketplace_newcurrency(blocknumber,extrinsic_hash,address,currentime,parameters['currencycode'],parameters['info'])
             # Market Place Destroy Currency
             if nmodule== 'MarketPlace' and nfunction=='destroy_currency':
                 print("Market Place - Destroy Currency")
-                print("Currency id: ",c['call_args'][0]['value'])
-                marketplace_destroycurrency(blocknumber,'0x'+extrinsic.extrinsic_hash,extrinsic.address.value,currentime,c['call_args'][0]['value'])
+                print("Currency id: ",parameters['currencycode'])
+                marketplace_destroycurrency(blocknumber,extrinsic_hash,address,currentime,parameters['currencycode'])
             # Market Place Create New Country Code
             if nmodule== 'MarketPlace' and nfunction=='create_iso_country':
                 print("Market Place - Create New Country Code")
@@ -1910,7 +1912,7 @@ if(len(sys.argv)>1):
     if (sys.argv[1]== '--sync' or sys.argv[1]=="-s"):
         sync_blockchain(substrate)
     if (sys.argv[1]== '--test' or sys.argv[1]=="-t"):
-        x=16981
+        x=32242
         process_block(x)
 
 # subscribe to new block writing and process them in real time

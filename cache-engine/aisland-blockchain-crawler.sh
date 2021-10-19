@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # This is as script to initialize some variables and launch the crawler.
 # Change the variables below following your configuration, these are only examples:
 export DB_NAME=aisland
