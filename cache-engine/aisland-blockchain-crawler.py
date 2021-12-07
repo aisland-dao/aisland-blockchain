@@ -286,7 +286,8 @@ def create_tables():
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
                     `departmentid` int(11) NOT NULL,\
-                    `description` VARCHAR(128) NOT NULL,PRIMARY KEY (id))"
+                    `description` VARCHAR(128) NOT NULL,PRIMARY KEY (id)),\
+                    `mpproductdepartments` ADD `photo` VARCHAR(128) not NULL"
     try:
         print("Creating table mpproductdepartment...")
         cursor.execute(createmarketplace)
