@@ -474,6 +474,25 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating mpreview table for the market place
+    createmarketplace="CREATE TABLE `mpreviews` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(64) NOT NULL,\
+                    `productid` VARCHAR(32) NOT NULL,\
+                    `stars` INT(1) NOT NULL,\
+                    `review` TEXT NOT NULL,PRIMARY KEY (id)), \
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table mpreviews...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpreviews' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #creating moproducts table for the market place
     createmarketplace="CREATE TABLE `mpproducts` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
                     `blocknumber` INT(11) NOT NULL,\
