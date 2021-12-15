@@ -481,7 +481,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
-                    `email` VARCHAR(64) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
                     `productid` VARCHAR(32) NOT NULL,\
                     `stars` INT(1) NOT NULL,\
                     `thumbsup` INT(11) NOT NULL,\
@@ -502,7 +502,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
-                    `email` VARCHAR(64) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
                     `idreview` INT(11) NOT NULL,\
                     `thumbsvote` VARCHAR(1) NOT NULL, \
                     PRIMARY KEY (id))"
