@@ -484,6 +484,7 @@ def create_tables():
                     `email` VARCHAR(66) NOT NULL,\
                     `productid` VARCHAR(32) NOT NULL,\
                     `stars` INT(1) NOT NULL,\
+                    `name` VARCHAR(64) NOT NULL,\
                     `thumbsup` INT(11) NOT NULL,\
                     `thumbsdown` INT(11) NOT NULL,\
                     `review` TEXT NOT NULL, \
