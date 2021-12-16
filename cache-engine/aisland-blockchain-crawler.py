@@ -448,6 +448,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66),\
                     `shipperid` VARCHAR(8) NOT NULL,\
                     `info` VARCHAR(8192) NOT NULL,PRIMARY KEY (id))"
     try:
@@ -464,6 +465,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66),\
                     `shippingratesid` VARCHAR(8) NOT NULL,\
                     `shipperid` VARCHAR(8) NOT NULL,\
                     `info` TEXT NOT NULL,PRIMARY KEY (id))"
