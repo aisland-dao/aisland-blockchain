@@ -286,7 +286,9 @@ def create_tables():
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
                     `departmentid` int(11) NOT NULL,\
-                    `description` VARCHAR(128) NOT NULL,PRIMARY KEY (id))"
+                    `description` VARCHAR(128) NOT NULL,\
+                    `photo` VARCHAR(128) not NULL,\
+                    PRIMARY KEY (id))"
     try:
         print("Creating table mpproductdepartment...")
         cursor.execute(createmarketplace)
@@ -446,6 +448,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66),\
                     `shipperid` VARCHAR(8) NOT NULL,\
                     `info` VARCHAR(8192) NOT NULL,PRIMARY KEY (id))"
     try:
@@ -462,6 +465,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66),\
                     `shippingratesid` VARCHAR(8) NOT NULL,\
                     `shipperid` VARCHAR(8) NOT NULL,\
                     `info` TEXT NOT NULL,PRIMARY KEY (id))"
@@ -470,6 +474,46 @@ def create_tables():
         cursor.execute(createmarketplace)
     except mysql.connector.Error as err:
             if(err.msg!="Table 'mpshippingrates' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpreviews table for the market place
+    createmarketplace="CREATE TABLE `mpreviews` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
+                    `productid` VARCHAR(32) NOT NULL,\
+                    `stars` INT(1) NOT NULL,\
+                    `name` VARCHAR(64) NOT NULL,\
+                    `thumbsup` INT(11) NOT NULL,\
+                    `thumbsdown` INT(11) NOT NULL,\
+                    `review` TEXT NOT NULL, \
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table mpreviews...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpreviews' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpreviewsvotes table for the market place
+    createmarketplace="CREATE TABLE `mpreviewsvotes` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
+                    `idreview` INT(11) NOT NULL,\
+                    `thumbsvote` VARCHAR(1) NOT NULL, \
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table mpreviews...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpreviews' already exists"):
                 print(err.msg)
     else:
         print("OK")
