@@ -100,6 +100,7 @@ decl_event!(
         MarketPlaceProductUpdated(u32,Vec<u8>),             // A product has been created or updated
         MarketPlaceLoginDataCreated(Vec<u8>, Vec<u8>,AccountId), // A new login data has been created
         MarketPlaceLoginDataDestroyed(Vec<u8>),             // A login data has been destroyed
+        MarketPlaceLoginPwdChanged(Vec<u8>, Vec<u8>),       // password changed
     }
 );
 
@@ -154,6 +155,8 @@ decl_error! {
         SellerNameTooShort,
         /// The Sellet city is too short, it mut be at the least 5 bytes
         SellerCityTooShort,
+         /// The Sellet city is too short, it mut be at the least 5 bytes
+         SellerCityTooLong,
         /// The seller address is too long, maximum 128 bytes
         SellerAddressTooLong,
         /// The seller zip code is too long, maximum 12 bytes
@@ -367,7 +370,7 @@ decl_error! {
         // Email hash has not been found on chain
         EmailHashNotFound,
         /// Signer of transaction is not authorized to execute it
-        SignerIsNotAuthorized
+        SignerIsNotAuthorized,  
     }
 }
 
@@ -481,6 +484,7 @@ decl_module! {
             // checking the city minimum 3 bytes
             let sellercity=json_get_value(configuration.clone(),"city".as_bytes().to_vec());
             ensure!(sellercity.len()>5,Error::<T>::SellerCityTooShort);
+            ensure!(sellercity.len()<64,Error::<T>::SellerCityTooLong);
             // checking websites
             let websites=json_get_complexarray(configuration.clone(),"websites".as_bytes().to_vec());
             if websites.len()>0 {
@@ -592,8 +596,8 @@ decl_module! {
                 ensure!(inoutv==0 || inoutv==1,Error::<T>::IncludedExcludedCountryValueIsMissing);
                 x=x+1;
             }
-            // check that we have at least one valid product category
-            ensure!(nc>0,Error::<T>::SellerCategoriesMissing);
+            // check that we have at least one valid country
+            ensure!(x>0,Error::<T>::SellerCategoriesMissing);
             // delivery area can be delimited by GPS coordinates where a first point is the center of a circle and second point is the border of the same circle
             // this is useful if a service/product can be delivered only around a certain place
             let shipmentarea=json_get_complexarray(configuration.clone(),"shipmentarea".as_bytes().to_vec());
@@ -630,7 +634,6 @@ decl_module! {
                 let selleraccountid=T::AccountId::decode(&mut &selleraccountv[1..33]).unwrap_or_default();
                 sender=selleraccountid;
             }
-
             //store seller on chain
             if Sellers::<T>::contains_key(&sender)==false {
                 // Insert new seller
@@ -1329,7 +1332,7 @@ decl_module! {
          /// Create a new Login Data
         #[weight = 1000]
         pub fn create_login_data(origin, emailhash: Vec<u8>, encryptedpwdhash: Vec<u8>, accountid: T::AccountId,encryptedseed: Vec<u8>) -> dispatch::DispatchResult {
-            // check the request is signed from the Super User
+            // check the request is signed 
             let _sender = ensure_signed(origin)?;
             // check Email hash length
             ensure!(emailhash.len()>8, Error::<T>::WrongLengthEmailHash);
@@ -1348,6 +1351,32 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
+        /// Create a new Login Data
+        #[weight = 1000]
+        pub fn change_pwd_login_data(origin, emailhash: Vec<u8>, encryptedpwdhash: Vec<u8>) -> dispatch::DispatchResult {
+            // check the request is signed from the same user who created it
+            let sender = ensure_signed(origin)?;
+            // check Email hash length
+            ensure!(emailhash.len()>8, Error::<T>::WrongLengthEmailHash);
+            // check Encrypted Password length
+            ensure!(encryptedpwdhash.len()>8, Error::<T>::WrongLengthEncryptedPassword);
+            // check the email hash is alreay present on chain
+            ensure!(LoginData::contains_key(&emailhash), Error::<T>::EmailHashNotFound);
+            // check the email account is present on chain
+            ensure!(EmailAccount::<T>::contains_key(&emailhash),Error::<T>::EmailHashNotFound);
+            //let accountidemail=EmailAccount::<T>::get(&emailhash).unw;
+            let accountidemail=EmailAccount::<T>::get(emailhash.clone());
+            // check that the signer is the creator of the original state
+            ensure!(sender==accountidemail,Error::<T>::SignerIsNotAuthorized);
+            // store the Login Data
+            LoginData::take(&emailhash);
+            LoginData::insert(emailhash.clone(),encryptedpwdhash.clone());
+            // Generate event
+            Self::deposit_event(RawEvent::MarketPlaceLoginPwdChanged(emailhash,encryptedpwdhash));
+            // Return a successful DispatchResult
+            Ok(())
+        }
+
         /// Destroy a login data
         #[weight = 1000]
         pub fn destroy_login_data(origin, emailhash: Vec<u8>,) -> dispatch::DispatchResult {
@@ -1356,7 +1385,7 @@ decl_module! {
             // verify the login data exists
             ensure!(LoginData::contains_key(&emailhash)==true, Error::<T>::EmailHashNotFound);
             ensure!(EmailAccount::<T>::contains_key(&emailhash)==true, Error::<T>::EmailHashNotFound);
-            let accountid=EmailAccount::<T>::get(&emailhash);
+            let accountid=EmailAccount::<T>::get(emailhash.clone());
             ensure!(accountid==sender,Error::<T>::SignerIsNotAuthorized);
             // Remove email hash and accountid and encrypted seed
             LoginData::take(emailhash.clone());
@@ -1368,7 +1397,6 @@ decl_module! {
             // Return a successful DispatchResult
             Ok(())
         }
-        
     }
 }
 
