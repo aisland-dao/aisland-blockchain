@@ -1688,6 +1688,120 @@ def marketplace_destroyshippingrates(blocknumber,txhash,signer,currenttime,shipp
     cnx.commit()
     cursor.close()
     cnx.close()
+# function to store Market Place - New Seller Type
+def marketplace_newsellertype(blocknumber,txhash,signer,currenttime,typeid,description):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Seller Type")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Seller Type: ",typeid)
+    print("Description Seller Type: ",description)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpsellertype set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,typeid=%s,description=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,typeid,description)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Seller Type
+def marketplace_destroysellertype(blocknumber,txhash,signer,currenttime,typeid):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Seller Type Id")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Seller Type: ",typeid)
+    cursor = cnx.cursor()
+    deltx="delete from mpsellertype where typeid=%s"
+    datatx=(typeid)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to store Market Place - New Seller
+def marketplace_newseller(blocknumber,txhash,signer,currenttime,typeid,companyname,name,surname,address,zipcode,city,coutry,pobox,email,emailsupport,phone,phonesupport,mainwebsite,additionalwebsite,twitter,facebook,instagram,youtube,discord,pinterest,linkedin,tiktok,othersocial,certurl,additionalcerturl,certdescription,additionalcertdescription,soldnotification,updatenotification,commentnotification,reviewnotification,dailyemail,cardid,cardname,cardexpires):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Market Place - Storing New Seller")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Id Seller Type: ",typeid)
+    print("Company Name: ",companyname)
+    print("First Name: ",name)
+    print("Second Name: ",surname)
+    print("Address: ",address)
+    print("zipcode: ",zipcode)
+    print("city: ",city)
+    print("country: ",country)
+    print("pobox: ",pobox)
+    print("email: ",email)
+    print("phone: ",phone)
+    print("phonesupport: ",phonesupport)
+    print("additionalwebsite: ",additionalwebsite)
+    print("twitter: ",twitter)
+    print("facebook: ",facebook)
+    print("instagram: ",instagram)
+    print("youtube: ",youtube)
+    print("discord: ",discord)
+    print("pinterest: ",pinterest)
+    print("linkedin: ",linkedin)
+    print("tiktok: ",tiktok)
+    print("othersocial: ",othersocial)
+    print("certurl: ",certurl)
+    print("additionalcerturl: ",additionalcerturl)
+    print("certdescription: ",certdescription)
+    print("additionalcertdescription: ",additionalcertdescription)
+    print("soldnotification: ",soldnotification)
+    print("updatenotification: ",updatenotification)
+    print("commentnotification: ",commentnotification)
+    print("reviewnotification: ",reviewnotification)
+    print("dailyemail: ",dailyemail)
+    print("cardid: ",cardid)
+    print("cardname: ",cardname)
+    print("cardexpires: ",cardexpires)
+    cursor = cnx.cursor()
+    dtblockchain=currenttime.replace("T"," ")
+    dtblockchain=dtblockchain[0:19]
+    addtx="insert into mpsellers set blocknumber=%s,txhash=%s,signer=%s,dtblockchain=%s,typeid=%s,companyname=%s,name=%s,surname=%s,address=%s,zipcode=%s,city=%s,coutry=%s,pobox=%s,email=%s,emailsupport=%s,phone=%s,phonesupport=%s,mainwebsite=%s,additionalwebsite=%s,twitter=%s,facebook=%s,instagram=%s,youtube=%s,discord=%s,pinterest=%s,linkedin=%s,tiktok=%s,othersocial=%s,certurl=%s,additionalcerturl=%s,certdescription=%s,additionalcertdescription=%s,soldnotification=%s,updatenotification=%s,commentnotification=%s,reviewnotification=%s,dailyemail=%s,cardid=%s,cardname=%s,cardexpires=%s"
+    datatx=(blocknumber,txhash,signer,dtblockchain,typeid,companyname,name,surname,address,zipcode,city,coutry,pobox,email,emailsupport,phone,phonesupport,mainwebsite,additionalwebsite,twitter,facebook,instagram,youtube,discord,pinterest,linkedin,tiktok,othersocial,certurl,additionalcerturl,certdescription,additionalcertdescription,soldnotification,updatenotification,commentnotification,reviewnotification,dailyemail,cardid,cardname,cardexpires)
+    try:
+        cursor.execute(addtx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
+# function to Destroy Seller
+def marketplace_destroyseller(blocknumber,txhash,signer,currenttime,email):
+    cnx = mysql.connector.connect(user=DB_USER, password=DB_PWD,host=DB_HOST,database=DB_NAME)
+    print("Destroy Seller")
+    print("BlockNumber: ",blocknumber)
+    print("TxHash: ",txhash)
+    print("Current time: ",currenttime)
+    print("Signer: ",signer)
+    print("Seller Email: ",email)
+    cursor = cnx.cursor()
+    deltx="delete from mpsellers where email=%s"
+    datatx=(email)
+    try:
+        cursor.execute(deltx,datatx)
+    except mysql.connector.Error as err:
+                print("[Error] ",err.msg)
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 # function to process a block of data
 def process_block(blocknumber):
     # Retrieve extrinsics in block
