@@ -555,6 +555,74 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    #creating moproducts table for the market place
+    createmarketplace="CREATE TABLE `mpsellertype` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `typeid` INT(11) NOT NULL,\
+                    `description` VARCHAR(128) NOT NULL,\
+                     PRIMARY KEY (id))"
+    try:
+        print("Creating table mpsellertype...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpsellertype' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating moproducts table for the market place
+    createmarketplace="CREATE TABLE `mpsellers` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `typeid` INT(11) NOT NULL,\
+                    `companyname` VARCHAR(64) NOT NULL,\
+                    `name` VARCHAR(64) NOT NULL,\
+                    `surname` VARCHAR(64) NOT NULL,\
+                    `address` VARCHAR(64) NOT NULL,\
+                    `zipcode` VARCHAR(64) NOT NULL,\
+                    `city` VARCHAR(64) NOT NULL,\
+                    `country` VARCHAR(8) NOT NULL,\
+                    `pobox` VARCHAR(64) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
+                    `emailsupport` VARCHAR(66) NOT NULL,\
+                    `phone` VARCHAR(21) NOT NULL,\
+                    `phonesupport` VARCHAR(21) NOT NULL,\
+                    `mainwebsite` VARCHAR(256) NOT NULL,\
+                    `additionalwebsite` VARCHAR(256) NOT NULL,\
+                    `twitter` VARCHAR(256) NOT NULL,\
+                    `facebook` VARCHAR(256) NOT NULL,\
+                    `instagram` VARCHAR(256) NOT NULL,\
+                    `youtube` VARCHAR(256) NOT NULL,\
+                    `discord` VARCHAR(256) NOT NULL,\
+                    `pinterest` VARCHAR(256) NOT NULL,\
+                    `linkedin` VARCHAR(256) NOT NULL,\
+                    `tiktok` VARCHAR(256) NOT NULL,\
+                    `othersocial` VARCHAR(256) NOT NULL,\
+                    `certurl` VARCHAR(256) NOT NULL,\
+                    `additionalcerturl` VARCHAR(256) NOT NULL,\
+                    `certdescription` VARCHAR(10) NOT NULL,\
+                    `additionalcertdescription` VARCHAR(10) NOT NULL,\
+                    `soldnotification` VARCHAR(1) NOT NULL,\
+                    `updatenotification` VARCHAR(1) NOT NULL,\
+                    `commentnotification` VARCHAR(1) NOT NULL,\
+                    `reviewnotification` VARCHAR(1) NOT NULL,\
+                    `dailyemail` VARCHAR(1) NOT NULL,\
+                    `cardid` VARCHAR(64) NOT NULL,\
+                    `cardname` VARCHAR(64) NOT NULL,\
+                    `cardexpires` DATETIME NOT NULL,\
+                     PRIMARY KEY (id))"
+    try:
+        print("Creating table mpsellers...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpsellers' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
     #regular closing of database
     cursor.close()
     cnx.close()
