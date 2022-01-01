@@ -555,7 +555,84 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
-    #creating moproducts table for the market place
+    #creating mporders table for the market place
+    createmarketplace="CREATE TABLE `mporders` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
+                    `orderid` INT(11) NOT NULL,\
+                    `phonenumber` VARCHAR(21) NOT NULL,\
+                    `name` VARCHAR(64) NOT NULL,\
+                    `surname` VARCHAR(64) NOT NULL,\
+                    `companyname` VARCHAR(64),\
+                    `address1` VARCHAR(64) NOT NULL,\
+                    `address2` VARCHAR(64) NOT NULL,\
+                    `city` VARCHAR(64) NOT NULL,\
+                    `state` VARCHAR(64) NOT NULL,\
+                    `zip` VARCHAR(64) NOT NULL,\
+                    `country` VARCHAR(3) NOT NULL,\
+                    `nameshipping` VARCHAR(64) NOT NULL,\
+                    `surnameshipping` VARCHAR(64) NOT NULL,\
+                    `companynameshipping` VARCHAR(64),\
+                    `address1shipping` VARCHAR(64) NOT NULL,\
+                    `address2shipping` VARCHAR(64) NOT NULL,\
+                    `cityshipping` VARCHAR(64) NOT NULL,\
+                    `stateshipping` VARCHAR(64) NOT NULL,\
+                    `zipshipping` VARCHAR(64) NOT NULL,\
+                    `countryshipping` VARCHAR(3) NOT NULL,\
+                     PRIMARY KEY (id))"
+    try:
+        print("Creating table mporderdetails...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mporderdetails' already exists"):
+                print(err.msg)
+    else:
+        print("OK")        
+    #creating mpordersdetails table for the market place
+    createmarketplace="CREATE TABLE `mpordersdetails` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
+                    `orderid` INT(11) NOT NULL,\
+                    `productid` VARCHAR(32) NOT NULL,\
+                    `price` numeric(36,18) NOT NULL,\
+                    `currency` VARCHAR(4) NOT NULL,\
+                    `quantity` NUMERIC(10,2) NOT NULL,\
+                    `shipperid` INT(11) NOT NULL,\
+                    `shippingcost` numeric(36,18) NOT NULL,\
+                    `currencyshipping` VARCHAR(4) NOT NULL,\
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table mporderdetails...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mporderdetails' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpusers table for the market place
+    createmarketplace="CREATE TABLE `mpusers` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66) NOT NULL,\
+                    `hashemail` VARCHAR(256) NOT NULL,\
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table mpusers...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpusers' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpsellertype table for the market place
     createmarketplace="CREATE TABLE `mpsellertype` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
                     `blocknumber` INT(11) NOT NULL,\
                     `txhash` VARCHAR(66) NOT NULL,\
