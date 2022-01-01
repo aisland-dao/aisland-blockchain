@@ -582,6 +582,7 @@ def create_tables():
                     `stateshipping` VARCHAR(64) NOT NULL,\
                     `zipshipping` VARCHAR(64) NOT NULL,\
                     `countryshipping` VARCHAR(3) NOT NULL,\
+                    `dtpayment` DATETIME NOT NULL,\
                      PRIMARY KEY (id))"
     try:
         print("Creating table mporderdetails...")
@@ -607,6 +608,24 @@ def create_tables():
                     `shippingcost` numeric(36,18) NOT NULL,\
                     `currencyshipping` VARCHAR(4) NOT NULL,\
                     PRIMARY KEY (id))"
+    try:
+        print("Creating table mporderdetails...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mporderdetails' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mporderspayments table for the market place
+    createmarketplace="CREATE TABLE `mporderspayments` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `orderid` INT(11) NOT NULL,\
+                    `currency` VARCHAR(4) NOT NULL,\
+                    `amount` numeric(36,18) NOT NULL,\
+                     PRIMARY KEY (id))"
     try:
         print("Creating table mporderdetails...")
         cursor.execute(createmarketplace)
