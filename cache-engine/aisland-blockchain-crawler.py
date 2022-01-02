@@ -450,7 +450,8 @@ def create_tables():
                     `signer` VARCHAR(48) NOT NULL,\
                     `email` VARCHAR(66),\
                     `shipperid` VARCHAR(8) NOT NULL,\
-                    `info` VARCHAR(8192) NOT NULL,PRIMARY KEY (id))"
+                    `info` VARCHAR(8192) NOT NULL,\
+                    PRIMARY KEY (id))"
     try:
         print("Creating table mpshippers...")
         cursor.execute(createmarketplace)
@@ -474,6 +475,25 @@ def create_tables():
         cursor.execute(createmarketplace)
     except mysql.connector.Error as err:
             if(err.msg!="Table 'mpshippingrates' already exists"):
+                print(err.msg)
+    else:
+        print("OK")
+    #creating mpfedex table for the market place
+    createmarketplace="CREATE TABLE `mpfedex` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(66),\
+                    `apikey` VARCHAR(128) NOT NULL,\
+                    `secretkey` VARCHAR(128) NOT NULL,\
+                    `account` VARCHAR(128) NOT NULL,\
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table mpfedex...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpfedex' already exists"):
                 print(err.msg)
     else:
         print("OK")
