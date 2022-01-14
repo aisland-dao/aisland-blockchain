@@ -603,6 +603,8 @@ def create_tables():
                     `zipshipping` VARCHAR(64) NOT NULL,\
                     `countryshipping` VARCHAR(3) NOT NULL,\
                     `dtpayment` DATETIME NOT NULL,\
+                    `shipment` VARCHAR(8192) NOT NULL,\
+                    `dtremoval` DATETIME NOT NULL,\
                      PRIMARY KEY (id))"
     try:
         print("Creating table mporderdetails...")
