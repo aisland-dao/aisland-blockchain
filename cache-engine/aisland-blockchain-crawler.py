@@ -732,6 +732,7 @@ def create_tables():
                     `cardid` VARCHAR(64) NOT NULL,\
                     `cardname` VARCHAR(64) NOT NULL,\
                     `cardexpires` DATETIME NOT NULL,\
+                    `avatar` VARCHAR(256),\
                      PRIMARY KEY (id))"
     try:
         print("Creating table mpsellers...")
