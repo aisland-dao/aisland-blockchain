@@ -543,7 +543,7 @@ def create_tables():
                     `txhash` VARCHAR(66) NOT NULL,\
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
-                    `email` VARCHAR(66) NOT NULL,\
+                    `email` VARCHAR(256) NOT NULL,\
                     `productid` VARCHAR(32) NOT NULL,\
                     `departmentid` INTEGER NOT NULL,\
                     `categoryid` INTEGER NOT NULL,\
@@ -575,6 +575,31 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    createmarketplace="CREATE TABLE `mpproductsrequestreview` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `productid` VARCHAR(32) NOT NULL,\
+                    `dtrequestreview` DATETIME NOT NULL,\
+                    `reasonrequestreview` VARCHAR(256),\
+                    `emailrequestreview` VARCHAR(256),\
+                    `dtapproval` DATETIME,\
+                    `dtrefusal` DATETIME,\
+                    `reasonrefusal` VARCHAR(256),\
+                    PRIMARY KEY (id))"
+    try:
+        print("Creating table mpproductsrequestreview...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpproductsrequestreview' already exists"):
+                print(err.msg)
+    else:
+        print("OK")                    
+                    
+                    
+                    
+                    
     #creating mporders table for the market place
     createmarketplace="CREATE TABLE `mporders` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
                     `blocknumber` INT(11) NOT NULL,\
@@ -582,7 +607,7 @@ def create_tables():
                     `dtblockchain` DATETIME NOT NULL,\
                     `signer` VARCHAR(48) NOT NULL,\
                     `email` VARCHAR(66) NOT NULL,\
-                    `orderid` INT(11) NOT NULL,\
+                    `orderid` VARCHAR(32) NOT NULL,\
                     `phonenumber` VARCHAR(21) NOT NULL,\
                     `name` VARCHAR(64) NOT NULL,\
                     `surname` VARCHAR(64) NOT NULL,\
@@ -607,10 +632,10 @@ def create_tables():
                     `dtremoval` DATETIME NOT NULL,\
                      PRIMARY KEY (id))"
     try:
-        print("Creating table mporderdetails...")
+        print("Creating table mporders...")
         cursor.execute(createmarketplace)
     except mysql.connector.Error as err:
-            if(err.msg!="Table 'mporderdetails' already exists"):
+            if(err.msg!="Table 'mporders' already exists"):
                 print(err.msg)
     else:
         print("OK")        
@@ -629,6 +654,9 @@ def create_tables():
                     `shipperid` INT(11) NOT NULL,\
                     `shippingcost` numeric(36,18) NOT NULL,\
                     `currencyshipping` VARCHAR(4) NOT NULL,\
+                    `trackingurm` VARCHAR(256),\
+                    `size` VARCHAR(32),\
+                    `dtreception` DATETIME,\
                     PRIMARY KEY (id))"
     try:
         print("Creating table mporderdetails...")
@@ -731,7 +759,7 @@ def create_tables():
                     `dailyemail` VARCHAR(1) NOT NULL,\
                     `cardid` VARCHAR(64) NOT NULL,\
                     `cardname` VARCHAR(64) NOT NULL,\
-                    `cardexpires` DATETIME NOT NULL,\
+                    `cardexpires` DATETIME default NULL,\
                     `avatar` VARCHAR(256),\
                      PRIMARY KEY (id))"
     try:
@@ -742,6 +770,51 @@ def create_tables():
                 print(err.msg)
     else:
         print("OK")
+    createmarketplace="CREATE TABLE `mpprovisioning` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(256) NOT NULL,\
+                    `salesorderid` VARCHAR(32) NOT NULL,\
+                    `productid` VARCHAR(32) NOT NULL,\
+                    `unitcost` NUMERIC(36,18) NOT NULL,\
+                    `currency` VARCHAR(4) NOT NULL,\
+                    `quantity` NUMERIC(10,2) NOT NULL,\
+                    `dtprovisioning` DATETIME NOT NULL,\
+                    `supplierorderurl` VARCHAR(256) NOT NULL,\
+                    `dtpayment` DATETIME NOT NULL,\
+                    `paymentaccount` varchar(8) NOT NULL,\
+                     PRIMARY KEY (id))"
+    try:
+        print("Creating table mpprovisioning...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpprovisioning' already exists"):
+                print(err.msg)
+    else:
+        print("OK")                    
+    createmarketplace="CREATE TABLE `mpaccountingchartoaccounts` (`id` MEDIUMINT NOT NULL AUTO_INCREMENT,\
+                    `blocknumber` INT(11) NOT NULL,\
+                    `txhash` VARCHAR(66) NOT NULL,\
+                    `dtblockchain` DATETIME NOT NULL,\
+                    `signer` VARCHAR(48) NOT NULL,\
+                    `email` VARCHAR(256) NOT NULL,\
+                    `accountcode` varchar(8) NOT NULL,\
+                    `accountgroup` varchar(3) NOT NULL,\
+                    `description` varchar(64) NOT NULL,\
+                    `accounttype` varchar(1) NOT NULL,\
+                    `totalcredit` NUMERIC(36,18),\
+                    `totaldebit` NUMERIC(36,18),\
+                     PRIMARY KEY (id))"
+    try:
+        print("Creating table mpaccountingchartoaccounts...")
+        cursor.execute(createmarketplace)
+    except mysql.connector.Error as err:
+            if(err.msg!="Table 'mpaccountingchartoaccounts' already exists"):
+                print(err.msg)
+    else:
+        print("OK")      
     #regular closing of database
     cursor.close()
     cnx.close()
